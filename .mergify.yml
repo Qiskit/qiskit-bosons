@@ -1,0 +1,10 @@
+pull_request_rules:
+  - name: backport
+    conditions:
+      - label=stable backport potential
+    actions:
+      backport:
+        branches:
+          # TODO: there is no stable branch before the first release; set this to `stable/0.1` (or
+          # whichever minor is current) once it exists.
+          - stable/0.1

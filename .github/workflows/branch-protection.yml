@@ -1,0 +1,231 @@
+---
+
+# This is the shared configuration that defines all the jobs we include in branch protection.  This
+# needs to be run both by PRs and by the merge queue.
+#
+# All required branch-protection rules should be in here, and everything in here should be listed in
+# the `finalize` job.  The repository ruleset in the GitHub web interface then only needs to require
+# the single "Finalize" check, which means adding, removing or renaming any other CI job is a pure
+# code change and never needs a settings edit.
+#
+# `publish-preview` is the one deliberate exception to that rule: it publishes rather than checks, so a
+# `gh-pages` push failure must not be able to block a merge.  See the comment on the job itself.
+name: Branch Protection
+
+on:
+  # `merge_group` is inert until a merge-queue rule is added to the repository ruleset; keeping the
+  # trigger here means enabling the queue later is a settings-only change.
+  merge_group:
+  pull_request:
+    branches:
+      - main
+      - 'stable/**'
+
+concurrency:
+  # Deliberately no `github.head_ref` component: it is empty for `merge_group` events, so including it
+  # would collapse every merge-queue entry into a single concurrency group and make them cancel each
+  # other.  `github.ref` is already unique per pull request and per queue entry.
+  group: ${{ github.repository }}-${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  config:
+    name: Configure
+    uses: ./.github/workflows/config.yml
+
+  # This 'finalize' job is a no-op; its sole purpose is to depend on all the other jobs and provide a
+  # single in-code determination of whether the branch-protection rules have been passed.  The
+  # ruleset in the GitHub web interface can then depend only on this job.
+  finalize:
+    name: Finalize
+    runs-on: 'ubuntu-latest'
+    # This list should contain every other job in this file.
+    needs:
+      - config
+      - lint
+      - docs
+      - test-latest
+      - test-minimum
+      - test-development
+    # This job needs to trigger even if its predecessors failed and return the same status.  By
+    # default, GitHub Actions will "skip" the job if a requirement failed, but that counts as a
+    # "success" state, which is not acceptable for a branch-protection rule.  We don't use `always`
+    # because we don't want `cancelled` to trigger this.
+    if: success() || failure()
+    steps:
+      - run: |
+          echo "Successful run."
+        if: ${{ !contains(needs.*.result, 'failure') }}
+      - run: |
+          echo "Predecessor jobs failed.  See GitHub Actions logs." >&2
+          exit 1
+        if: ${{ contains(needs.*.result, 'failure') }}
+
+  lint:
+    name: Lint
+    needs: config
+    uses: ./.github/workflows/lint.yml
+    with:
+      runner: ${{ needs.config.outputs.runner-linux-x86_64 }}
+      python-version: ${{ needs.config.outputs.python-old }}
+
+  # Besides gating the merge, this job's `qiskit-bosons-htmldocs` artifact is what
+  # `publish-preview` below publishes, which is why a preview costs a download rather than a second
+  # build.
+  docs:
+    name: Docs
+    needs: config
+    uses: ./.github/workflows/docs.yml
+    with:
+      runner: ${{ needs.config.outputs.runner-linux-x86_64 }}
+      python-version: ${{ needs.config.outputs.python-coverage }}
+
+  # Publishes this pull request's rendered documentation to `pr/<number>/` on GitHub Pages, so that it
+  # can be browsed rather than downloaded as a zip.
+  #
+  # DELIBERATELY ABSENT from `finalize`'s `needs`, and `continue-on-error`, in violation of this file's
+  # general rule that every job is listed there.  This job publishes rather than checks: a rejected
+  # `gh-pages` push or a Pages outage says nothing about whether the change is fit to merge, and must
+  # not be able to block one.  Please keep it that way.
+  #
+  # The label gates publication only -- `docs` above always runs -- so a change that breaks the
+  # documentation build still fails CI whether or not anyone wants to read the result.  Note the label
+  # is not in this workflow's trigger `types`: applying it does not start a run by itself, so a preview
+  # lands on the next push, or immediately if you re-run this workflow from the Actions tab.
+  #
+  # This relies on GitHub Pages being served from the `gh-pages` branch.
+  publish-preview:
+    name: Publish docs preview
+    needs:
+      - config
+      - docs
+    # A fork's `GITHUB_TOKEN` is read-only, so this could not push even if it ran; skip rather than fail
+    # for a contributor who cannot act on it.  Fork authors use `make docs` instead.  The
+    # `pull_request` guard also covers `merge_group` runs, whose payload has no pull request at all.
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      contains(github.event.pull_request.labels.*.name, 'ci: preview docs')
+    continue-on-error: true
+    runs-on: ${{ needs.config.outputs.runner-linux-x86_64 }}
+    permissions:
+      # Push the `gh-pages` branch.
+      contents: write
+      # Comment the preview's location on the pull request.
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ needs.config.outputs.python-coverage }}
+
+      - name: Publish to gh-pages
+        uses: ./.github/actions/publish-docs
+        with:
+          prefix: pr/${{ github.event.pull_request.number }}
+          # Labels this preview's entry on the landing page.  Taken from the event payload rather than
+          # queried, so it is the title as of this run; a later edit re-titles the entry on the next push.
+          pr-title: ${{ github.event.pull_request.title }}
+          github-token: ${{ github.token }}
+
+      - name: Comment the preview link
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          # Kept in step with `docs_preview_cleanup.yml`, which finds the comment by this marker.
+          MARKER: '<!-- docs-preview -->'
+        run: |
+          set -euo pipefail
+          url="https://qiskit.github.io/qiskit-bosons/pr/${PR}/"
+          # Built with `printf` rather than a multi-line string: a quoted string would carry this file's
+          # indentation into the comment, and leading spaces make Markdown render the whole thing as a
+          # code block instead of a link.
+          body=$(printf '%s\n:book: [Documentation preview](%s) for this pull request.\n\n%s\n' \
+            "$MARKER" "$url" \
+            'Updated on every push while the `ci: preview docs` label is applied, and removed when this pull request is closed.')
+
+          # Update in place rather than appending, so that a pull request accumulates one comment
+          # instead of one per push.  Matching on the marker rather than on the author: an app posting
+          # through a user account reports `type: User`, so the author is not a reliable discriminator.
+          #
+          # The numeric id and the GraphQL node id are different values and both are needed below --
+          # REST patches by the former, GraphQL mutates by the latter -- so read them together rather
+          # than looking the comment up twice.  `|| true` because `read` reports failure on empty input,
+          # which is the ordinary first-push case rather than an error.
+          read -r comment_id node_id < <(
+            gh api "repos/${REPO}/issues/${PR}/comments" --paginate \
+              --jq "map(select(.body | startswith(\"${MARKER}\")))
+                    | .[0] | [(.id // empty), (.node_id // empty)] | @tsv"
+          ) || true
+
+          if [[ -n "${comment_id:-}" ]]; then
+            echo "Updating existing comment ${comment_id}."
+            gh api --method PATCH "repos/${REPO}/issues/comments/${comment_id}" \
+              -f body="$body" --jq '.html_url'
+            # The comment may have been collapsed by a previous close of this pull request, and a body
+            # update alone would leave it hidden -- indistinguishable, to a reader, from no comment at
+            # all.  Best-effort: this fails harmlessly when the comment is not currently minimized.
+            gh api graphql -f query='
+              mutation($id: ID!) {
+                unminimizeComment(input: {subjectId: $id}) { clientMutationId }
+              }' -F id="$node_id" >/dev/null 2>&1 || true
+          else
+            echo "Creating preview comment."
+            gh api --method POST "repos/${REPO}/issues/${PR}/comments" \
+              -f body="$body" --jq '.html_url'
+          fi
+
+  test-latest:
+    name: Tests / Latest
+    needs: config
+    uses: ./.github/workflows/test_latest_versions.yml
+    with:
+      runner: ${{ matrix.config.runner }}
+      python-version: ${{ matrix.config.python-version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - runner: ${{ needs.config.outputs.runner-linux-x86_64 }}
+            python-version: ${{ needs.config.outputs.python-old }}
+          - runner: ${{ needs.config.outputs.runner-linux-x86_64 }}
+            python-version: ${{ needs.config.outputs.python-new }}
+          - runner: ${{ needs.config.outputs.runner-macos-arm64 }}
+            python-version: ${{ needs.config.outputs.python-new }}
+          - runner: ${{ needs.config.outputs.runner-windows-x86_64 }}
+            python-version: ${{ needs.config.outputs.python-new }}
+
+  test-minimum:
+    name: Tests / Minimum
+    needs: config
+    uses: ./.github/workflows/test_minimum_versions.yml
+    with:
+      runner: ${{ matrix.config.runner }}
+      python-version: ${{ matrix.config.python-version }}
+      qiskit-version: ${{ needs.config.outputs.qiskit-minimum }}
+    strategy:
+      fail-fast: false
+      # A single-entry matrix, for consistency with the other test jobs: GitHub appends the matrix
+      # values to the job name, which is what makes the legs distinguishable in the Actions summary.
+      matrix:
+        config:
+          - runner: ${{ needs.config.outputs.runner-linux-x86_64 }}
+            python-version: ${{ needs.config.outputs.python-old }}
+
+  test-development:
+    name: Tests / Development
+    needs: config
+    uses: ./.github/workflows/test_development_versions.yml
+    with:
+      runner: ${{ matrix.config.runner }}
+      python-version: ${{ matrix.config.python-version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - runner: ${{ needs.config.outputs.runner-linux-x86_64 }}
+            python-version: ${{ needs.config.outputs.python-old }}
+          - runner: ${{ needs.config.outputs.runner-linux-x86_64 }}
+            python-version: ${{ needs.config.outputs.python-new }}

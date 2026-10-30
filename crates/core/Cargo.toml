@@ -1,0 +1,35 @@
+[package]
+name = "qiskit-bosons-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+name = "qiskit_bosons_core"
+
+[dependencies]
+nalgebra.workspace = true
+ndarray.workspace = true
+num-complex.workspace = true
+num-traits.workspace = true
+rayon.workspace = true
+regex.workspace = true
+thiserror.workspace = true
+qiskit-pyo3-ffi = { workspace = true, optional = true }
+
+[features]
+default = []
+# The FFI backend is feature-gated so that `core` itself stays free of any single
+# binding technology.  Today only the `pyext` backend (`qiskit-pyo3-ffi`) exists.
+pyext = ["dep:qiskit-pyo3-ffi"]
+# Reserved for the future C API backend, which will pull in `qiskit-sys`:
+#
+#     cext = ["dep:qiskit-sys"]
+#
+# It is declared (but empty, and wired to no dependency) so that the `cfg_select!`
+# arms and the mutual-exclusion `compile_error!` in `src/lib.rs` keep compiling
+# without tripping rustc's `unexpected_cfgs` lint.  Enabling it today selects no
+# backend at all, so any FFI-touching module will fail to build -- which is the
+# honest outcome until `qiskit-sys` is vendored back in.
+cext = []

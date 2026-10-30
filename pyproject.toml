@@ -1,0 +1,277 @@
+[build-system]
+# This is duplicated as `dependency-groups.build` for convenience.
+requires = [
+    "setuptools>=77.0.1",
+    "setuptools-rust",
+    "qiskit>=2.5.0,<2.7",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qiskit-bosons"
+dynamic = ["version"]
+readme = "README.md"
+description = "A toolkit for working with bosonic systems"
+license = "Apache-2.0"
+license-files = ["LICENSE.txt"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Natural Language :: English",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Rust",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Typing :: Typed",
+]
+
+requires-python = ">=3.11"
+
+dependencies = [
+    # `crates/qiskit-pyo3-ffi` is a pre-generated FFI snapshot of the OLDEST supported Qiskit
+    # minor (the lower bound below). Qiskit only appends C API slots, so it keeps working against
+    # newer minors, but full C ABI stability is not yet guaranteed, hence the upper bound. Widen
+    # it only once a new minor has been verified against the vendored FFI.
+    "qiskit>=2.5.0,<2.7",
+    "scipy>=1.10",
+    "stevedore>=3.0.0",
+    "typing-extensions",
+]
+
+# Rendered as the sidebar links on the PyPI project page.
+[project.urls]
+Homepage = "https://github.com/Qiskit/qiskit-bosons"
+Repository = "https://github.com/Qiskit/qiskit-bosons"
+Issues = "https://github.com/Qiskit/qiskit-bosons/issues"
+Documentation = "https://quantum.cloud.ibm.com/docs/addons/qiskit-bosons"
+
+# NOTE: this package currently declares no optional dependencies.
+#
+# The `all` extra is nevertheless declared, empty, as a placeholder: the CI, docs and install
+# instructions already install `.[all]`, so adding the first optional dependency is a pure
+# `pyproject.toml` change. When one is added, list it as its own extra and reference it from `all`
+# (`all = ["qiskit-bosons[<extra>]"]`).
+[project.optional-dependencies]
+all = []
+
+[dependency-groups]
+build = [
+    "setuptools>=77.0.1",
+    "setuptools-rust",
+    "qiskit>=2.5.0,<2.7",
+]
+style = [
+    "ruff==0.16.9",
+    "typos>=1.20.0",
+]
+lint = [
+    {include-group = "style"},
+    "mypy==2.3.1",
+    "reno>=4.1",
+    "toml>=0.10.2",
+]
+# Three tiers, each adding one layer, so that no requirement is declared twice. Deliberately kept
+# separate: the wheel smoke test installs `basetest` alone, and `test` must *not* inherit the optional
+# dependencies that `guidetest` adds. See the "Optional dependencies" section of tests/README.md for
+# why that boundary matters.
+basetest = [
+    "pytest>=8.0",
+    "pytest-subtests>=0.15.0",
+]
+doctest = [
+    {include-group = "basetest"},
+    "sybil>=9.3.0",
+    "rustworkx[mpl]",
+    "pylatexenc",
+]
+# Reserved for the optional dependencies that guides need. This package declares none today, so the
+# tier is currently identical to `doctest`; it exists so that the CI and docs wiring is already in
+# place when one is added.
+guidetest = [
+    {include-group = "doctest"},
+]
+test = [
+    {include-group = "doctest"},
+]
+coverage = [
+    {include-group = "test"},
+    "pytest-cov>=7.1.0",
+]
+docs = [
+    {include-group = "guidetest"},
+    "qiskit-sphinx-theme~=2.1.0",
+    "sphinx-design",
+    "sphinx-autodoc-typehints",
+    "sphinx-copybutton",
+    "sphinx-llm>=1.1.0",
+    "sphinx_reredirects",
+    "sphinxcontrib-katex",
+    "nbsphinx>=0.9.4",
+    "reno>=4.1",
+]
+dev = [
+    {include-group = "docs"},
+    {include-group = "lint"},
+    {include-group = "coverage"},
+    "tox>=4.28.0",
+]
+
+[project.entry-points."qiskit_bosons.circuit.synthesis"]
+"Evolution.LieTrotter" = "qiskit_bosons.circuit.library.synthesis:BosonicLieTrotter"
+"Evolution.SuzukiTrotter" = "qiskit_bosons.circuit.library.synthesis:BosonicSuzukiTrotter"
+"Evolution.QDrift" = "qiskit_bosons.circuit.library.synthesis:BosonicQDrift"
+"ModeRotation.Clements" = "qiskit_bosons.circuit.library.synthesis:BosonicClementsDecomposition"
+
+[project.entry-points."qiskit_bosons.transpiler.synthesis"]
+"Evolution.MapperFn" = "qiskit_bosons.transpiler.passes.synthesis:MapperFnEvolutionSynthesis"
+"InitializeModes.Occupation" = "qiskit_bosons.transpiler.passes.synthesis:OccupationInitializeModesSynthesis"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.dynamic]
+version = { attr = "qiskit_bosons.version.__version__" }
+
+[tool.setuptools.package-data]
+# `py.typed` marks the package as typed (PEP 561); the `_lib/**/*.pyi` stubs are the
+# pyo3-stub-gen output for the compiled extension and must ship in the wheel so the
+# native API is typed for downstream consumers (the pure-Python API is typed inline).
+qiskit_bosons = ["VERSION.txt", "py.typed", "_lib/**/*.pyi"]
+
+[tool.setuptools.packages.find]
+where = ["python"]
+include = ["qiskit_bosons", "qiskit_bosons.*"]
+
+[tool.coverage.run]
+branch = true
+parallel = true
+omit = [
+    # `version.py` shells out to git and is exercised only during packaging, not by the test
+    # suite; exclude the whole file rather than annotating every line with `# pragma: no cover`.
+    "*/qiskit_bosons/version.py",
+]
+
+[tool.coverage.report]
+fail_under = 95
+show_missing = true
+
+[tool.mypy]
+python_version = "3.11"
+show_error_codes = true
+warn_return_any = true
+warn_unused_configs = true
+warn_unused_ignores = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["./python/qiskit_bosons/", "./tests/python/"]
+markers = [
+    # Applied automatically by `tests/python/conftest.py` to every test whose module imports an
+    # optional dependency; `make testoptional` selects it together with the hand-written `skipif`
+    # markers. Do not apply it by hand.
+    "optionaldep: test requires an optional dependency (added automatically, do not set manually)",
+]
+
+[tool.ruff]
+line-length = 100
+src = ["python/qiskit_bosons", "tests/python"]
+target-version = "py311"
+# The `_lib/**/*.pyi` stubs are verbatim `pyo3-stub-gen` output (see tests/README.md, "Type
+# stubs"); they are generated, never hand-edited, and follow the generator's own style rather than
+# ours, so we exclude them from both `ruff format` and `ruff check`.
+extend-exclude = ["python/qiskit_bosons/_lib"]
+
+[tool.ruff.lint]
+select = [
+    "I",   # isort
+    "E",   # pycodestyle
+    "W",   # pycodestyle
+    "D",   # pydocstyle
+    "F",   # pyflakes
+    "RUF", # ruff
+    "UP",  # pyupgrade
+    "SIM", # flake8-simplify
+    "B",   # flake8-bugbear
+    "A",   # flake8-builtins
+]
+ignore = [
+    "E501", # line too long
+]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/python/**.py" = [
+    "D",  # pydocstyle
+]
+"docs/**/*" = [
+    "E402", # module level import not at top of file
+    "D",    # pydocstyle
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.typos.default.extend-words]
+arange = "arange"
+ba = "ba"
+iz = "iz"
+ket = "ket"
+thr = "thr"
+
+[tool.typos.default.extend-identifiers]
+# numpy's array type; `ND` trips the "should be AND" heuristic. Spelled out verbatim in the
+# `occupation_axis_mask` stub-type override in crates/pyext (the generated `.pyi` are excluded).
+NDArray = "NDArray"
+
+[tool.typos.files]
+extend-exclude = ["crates/qiskit-pyo3-ffi"]
+
+# `pyext` is built abi3 (see `crates/pyext/Cargo.toml`'s `pyo3` feature `abi3-py311` and
+# `setup.py`'s `py_limited_api="cp311"`), so cibuildwheel collapses each platform down to a
+# single `cp311-abi3` wheel.
+[tool.cibuildwheel]
+manylinux-x86_64-image = "manylinux_2_28"
+manylinux-aarch64-image = "manylinux_2_28"
+build = ["cp3??-*"]
+skip = [
+    "cp315-*",  # not yet supported
+    "*-win32",
+    "*_i686",
+    "*_universal2",
+    "*-musllinux_*",
+]
+# Run straight from the source checkout: passing an explicit path (`{project}/tests/python`) on
+# the command line makes pytest ignore `[tool.pytest.ini_options].testpaths`, so it never walks
+# into `python/qiskit_bosons/` and picks up the Sybil-collected doctests there (those stay owned
+# by `test_latest_versions.yml`; here we only want the plain `tests/python` suite against the
+# installed wheel). The doctests are not *run* here (`-p no:doctest`), but `doctest` is still the
+# group to install rather than `basetest`: `tests/python/conftest.py` imports Sybil to infer the
+# `optionaldep` marker, so the collection needs the doctest machinery importable even though it
+# collects no doctests. `guidetest` stays out, since nothing here needs the optional dependencies.
+# Both the `--group` and the test path are qualified with `{project}` rather than relying on a
+# `cd`, since cibuildwheel runs the test command from its own scratch directory (not the source
+# checkout) and, on Windows, a `cd ... &&`-chained command does not reliably carry its directory
+# change through to the rest of the chain.
+test-command = "pip install --group {project}/pyproject.toml:doctest && python -m pytest -p no:doctest -s {project}/tests/python"
+environment = 'RUSTUP_TOOLCHAIN="stable"'
+
+[tool.cibuildwheel.linux]
+before-all = "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y"
+environment = 'PATH="$PATH:$HOME/.cargo/bin" CARGO_NET_GIT_FETCH_WITH_CLI="true" RUSTUP_TOOLCHAIN="stable"'
+repair-wheel-command = "auditwheel repair -w {dest_dir} {wheel} && pipx run abi3audit --strict --report {wheel}"
+
+[tool.cibuildwheel.macos]
+# A single floor for both architectures: `rustc` raises it to 11.0 for `aarch64-apple-darwin` (the
+# oldest macOS with arm64 support) on its own, so the arm64 wheels still come out tagged
+# `macosx_11_0_arm64` while the x86_64 ones reach back to the older Intel machines that can still run
+# them.  10.12 is also `rustc`'s own default for `x86_64-apple-darwin`.
+environment = "MACOSX_DEPLOYMENT_TARGET='10.12' RUSTUP_TOOLCHAIN=stable"
+repair-wheel-command = "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel} && pipx run abi3audit --strict --report {wheel}"
+
+[tool.cibuildwheel.windows]
+repair-wheel-command = "cp {wheel} {dest_dir}/. && pipx run abi3audit --strict --report {wheel}"

@@ -1,0 +1,181 @@
+---
+name: Development version tests
+
+# This is a reusable workflow, driven by `branch-protection.yml` (for pull requests and the merge
+# queue) and by `on-nightly.yml` (for the scheduled run).  It deliberately has no triggers of its own
+# beyond `workflow_call`, and no `concurrency` block: the calling workflow owns both.
+#
+# This builds Qiskit from `main`, so it can be broken by upstream changes with no local cause.  It is
+# still part of branch protection; admins can bypass the ruleset on the rare days when upstream is
+# broken.
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: Runner image to use.
+        type: string
+        required: true
+      python-version:
+        description: Python version to test.
+        type: string
+        required: true
+      qiskit-ref:
+        description: >
+          Exact Qiskit commit to build against.  When empty (the pull-request case) the tip of
+          Qiskit's `main` is resolved at run time and an older cached build is accepted rather than
+          rebuilding, since upstream moves continuously.  The nightly run resolves the tip once in a
+          preceding job and passes it here, so that it always tests that exact commit.
+        type: string
+        required: false
+        default: ''
+
+jobs:
+  tests:
+    # The caller's job name carries the matrix values, which GitHub appends to it, so this only needs
+    # to say which suite is running.
+    name: development
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v7
+        name: Install Python
+        with:
+          python-version: ${{ inputs.python-version }}
+          # There is no lockfile (dependencies come from `pyproject.toml`'s PEP 735 dependency groups
+          # and extras), so the pip wheel cache is keyed on that file.  Coarser than a lockfile: any
+          # edit to it, dependency-related or not, invalidates the cache.
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      # `Cargo.lock` is committed and pins every dependency to crates.io, so it fully describes what
+      # gets downloaded.  Deliberately the registry only, not `target/`.  `restore-keys` is safe here
+      # because the registry is content-addressed -- a partial restore is just a warm subset that
+      # cargo completes and checksums.
+      - name: Cache cargo registry
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+          key: cargo-registry-v1 | ${{ runner.os }} | ${{ runner.arch }} | ${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            cargo-registry-v1 | ${{ runner.os }} | ${{ runner.arch }}
+
+      - name: Install Rust
+        run: rustup toolchain install --profile minimal --no-self-update
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -U pip build uv
+
+      # Resolve to a concrete SHA rather than a branch name, so that a cache hit means the same commit
+      # rather than merely the same branch.
+      - name: Resolve Qiskit ref
+        id: resolve
+        shell: bash
+        env:
+          QISKIT_REF: ${{ inputs.qiskit-ref }}
+        run: |
+          set -euo pipefail
+          ref="$QISKIT_REF"
+          if [[ -z "$ref" ]]; then
+            ref=$(git ls-remote https://github.com/Qiskit/qiskit HEAD | cut -f1)
+          fi
+          if [[ -z "$ref" ]]; then
+            echo "::error::failed to resolve a Qiskit ref" >&2
+            exit 1
+          fi
+          echo "Resolved Qiskit ref: $ref"
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+          minor=$(printf '%s' "${{ inputs.python-version }}" | cut -d. -f1,2)
+          echo "prefix=qiskit-wheel-v1 | ${RUNNER_OS} | ${RUNNER_ARCH} | py${minor}" >> "$GITHUB_OUTPUT"
+
+      # The Qiskit wheel is by far the most expensive thing this job does.  Given an explicit commit
+      # (the nightly) that exact commit is the point of the run and a near-miss would defeat it; when
+      # resolving the tip ourselves, an older cached build is accepted instead of rebuilding.
+      - name: Restore Qiskit wheel
+        id: cache
+        uses: actions/cache/restore@v6
+        with:
+          path: build/qiskit/dist/*.whl
+          key: ${{ steps.resolve.outputs.prefix }} | ${{ steps.resolve.outputs.ref }}
+          restore-keys: ${{ inputs.qiskit-ref == '' && format('{0} | ', steps.resolve.outputs.prefix) || '' }}
+
+      - name: Build Qiskit wheel from source
+        if: steps.cache.outputs.cache-matched-key == ''
+        shell: bash
+        env:
+          QISKIT_REF: ${{ steps.resolve.outputs.ref }}
+        run: |
+          set -euo pipefail
+          # Only the Python wheel is needed: this package links Qiskit through `qiskit-pyo3-ffi`, so
+          # there is no C library to compile against.  A blobless partial clone is enough of the
+          # object graph to check out one commit; `--depth 1 --branch <ref>` could not check out a SHA.
+          git clone --filter=blob:none https://github.com/Qiskit/qiskit build/qiskit
+          cd build/qiskit
+          git checkout "$QISKIT_REF"
+          git rev-parse HEAD
+          python -m build --wheel
+
+      - name: Report stale cache
+        if: steps.cache.outputs.cache-hit != 'true' && steps.cache.outputs.cache-matched-key != ''
+        shell: bash
+        run: |
+          {
+            echo "### Qiskit wheel restored from an older build"
+            echo
+            echo "Requested \`${{ steps.resolve.outputs.ref }}\`, restored from"
+            echo "\`${{ steps.cache.outputs.cache-matched-key }}\`.  The development suite accepts a"
+            echo "cached Qiskit build rather than rebuilding when upstream has moved on; the nightly"
+            echo "run rebuilds from the tip of \`main\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Saved even when a stale entry was restored, so that this exact ref is an exact hit next time.
+      # Skipped on an exact hit because cache entries are immutable.
+      - name: Save Qiskit wheel
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: build/qiskit/dist/*.whl
+          key: ${{ steps.resolve.outputs.prefix }} | ${{ steps.resolve.outputs.ref }}
+
+      - name: Install Python package
+        shell: bash
+        run: |
+          # `build`/`test` bound `qiskit` to released minors (see `pyproject.toml`, tied to the
+          # vendored `qiskit-pyo3-ffi` snapshot), which conflicts with the dev wheel built here.
+          # Excluding `qiskit` from `uv`'s resolution means that bound is never checked against
+          # the already-installed dev version.
+          pip install "qiskit @ file:$(echo build/qiskit/dist/*.whl)"
+          uv pip install --system --exclude <(echo qiskit) --group build --group test
+          SETUPTOOLS_RUST_CARGO_PROFILE=release uv pip install --system --exclude <(echo qiskit) -e .
+
+      # `testrust` exercises `core` under the `pyext` FFI backend, which needs the installed
+      # extension's interpreter, so it runs after the package install.
+      - name: Rust tests
+        shell: bash
+        run: |
+          make testrust
+
+      - name: Python tests
+        shell: bash
+        run: |
+          make pystubs testpython
+
+      # See `test_latest_versions.yml` for why this step exists although nothing is selected yet.
+      - name: Optional tests
+        shell: bash
+        run: |
+          SETUPTOOLS_RUST_CARGO_PROFILE=release uv pip install --system --exclude <(echo qiskit) -e ".[all]"
+          make testoptional
+
+      - name: Documentation tests
+        shell: bash
+        run: |
+          make doctest

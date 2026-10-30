@@ -1,0 +1,108 @@
+---
+name: Sphinx
+
+# This is a reusable workflow and the single source of truth for building the documentation.  It
+# deliberately has no `push` or `pull_request` triggers of its own, and no `concurrency` block: the
+# calling workflow owns both.
+#
+# It only ever *builds*.  Publishing is a separate concern, handled by the `publish-docs` composite
+# action from `docs_deploy.yml` (for `main` and `stable/**`) and `branch-protection.yml` (for labeled
+# pull requests), all of which consume the `qiskit-bosons-htmldocs` artifact produced below.
+#
+# This split was not previously possible: publication went through `actions/deploy-pages`, whose
+# artifact cannot be handed between workflow runs, so the deployment had to live in the same job as the
+# build.  Serving Pages from the `gh-pages` branch instead turns publication into an ordinary
+# `git push`, which any later run can perform given the artifact -- which in turn is what allows a pull
+# request to be previewed without building its documentation a second time.
+#
+# Note the same artifact is also what the IBM Quantum Platform's documentation ingestion pulls.  Its
+# API-reference entries are therefore relative links into the tree: the ingestion maps them onto the
+# platform's own API pages, so neither consumer needs the tree rewritten.
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: Runner image to use.  Expects an Ubuntu image.
+        type: string
+        required: true
+      python-version:
+        description: Python version to use.
+        type: string
+        required: true
+
+jobs:
+  build:
+    name: Docs
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v7
+        name: Install Python
+        with:
+          python-version: ${{ inputs.python-version }}
+          # There is no lockfile (dependencies come from `pyproject.toml`'s PEP 735 dependency groups
+          # and extras), so the pip wheel cache is keyed on that file.  Coarser than a lockfile: any
+          # edit to it, dependency-related or not, invalidates the cache.
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      # `Cargo.lock` is committed and pins every dependency to crates.io, so it fully describes what
+      # gets downloaded.  Deliberately the registry only, not `target/`.  `restore-keys` is safe here
+      # because the registry is content-addressed -- a partial restore is just a warm subset that
+      # cargo completes and checksums.
+      - name: Cache cargo registry
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+          key: cargo-registry-v1 | ${{ runner.os }} | ${{ runner.arch }} | ${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            cargo-registry-v1 | ${{ runner.os }} | ${{ runner.arch }}
+
+      - name: Install Rust
+        run: rustup toolchain install --profile minimal --no-self-update
+
+      - name: Install dependencies
+        run: tools/install_ubuntu_docs_dependencies.sh
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Tell reno to name the upcoming release after the branch we are on
+        shell: bash
+        run: |
+          sed -i.bak -e '/unreleased_version_title:*/d' releasenotes/config.yaml
+          echo unreleased_version_title: \"Upcoming release \(\`\`${GITHUB_REF_NAME}\`\`\)\" >> releasenotes/config.yaml
+
+      - name: Install Package
+        shell: bash
+        run: |
+          pip install --group build --group docs qiskit
+          SETUPTOOLS_RUST_CARGO_PROFILE=release pip install -e ".[all]"
+
+      - name: Build docs
+        shell: bash
+        run: |
+          make docs
+
+      # Provide a nicely named artifact that extracts into an
+      # identically named subdirectory.
+      - name: Prepare nice docs artifact for humans
+        if: always()
+        shell: bash
+        run: |
+          mkdir artifact
+          cp -a docs/_build/html artifact/qiskit-bosons-htmldocs
+
+      - name: Upload nice docs artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: qiskit-bosons-htmldocs
+          path: ./artifact

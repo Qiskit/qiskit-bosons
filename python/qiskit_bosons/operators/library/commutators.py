@@ -1,0 +1,152 @@
+# This code is a Qiskit project.
+#
+# (C) Copyright IBM 2026.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at https://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
+
+"""Commutator functions."""
+
+from typing import TypeVar
+
+from qiskit_bosons.protocols import SupportsCommutators
+
+T = TypeVar("T", bound=SupportsCommutators)
+
+
+def commutator(op_a: T, op_b: T) -> T:
+    r"""Computes the commutator of two operators.
+
+    The commutator is defined as:
+
+    .. math::
+
+       [A, B] = AB - BA
+
+    Operators which support this method must implement the :class:`.SupportsCommutators` protocol.
+
+    .. note::
+       Both inputs must be of the same operator type. This will also determine the output type.
+
+    .. doctest::
+
+       >>> from qiskit_bosons.operators import BosonOperator, ann, cre
+       >>> from qiskit_bosons.operators.library import commutator
+       >>> b = BosonOperator.from_dict({(ann(0),): 1.0})
+       >>> b_dag = BosonOperator.from_dict({(cre(0),): 1.0})
+       >>> commutator(b, b_dag).equiv(BosonOperator.one())
+       True
+       >>> n = BosonOperator.from_dict({(cre(0), ann(0)): 1.0})
+       >>> commutator(n, b_dag).equiv(b_dag)
+       True
+       >>> b1_dag = BosonOperator.from_dict({(cre(1),): 1.0})
+       >>> commutator(b_dag, b1_dag).equiv(BosonOperator.zero())
+       True
+
+    Args:
+        op_a: the operator :math:`A` above.
+        op_b: the operator :math:`B` above.
+
+    Returns:
+        The commutator :math:`[A, B]`.
+    """
+    return op_a._commutator_(op_a, op_b)
+
+
+def anti_commutator(op_a: T, op_b: T) -> T:
+    r"""Computes the anti-commutator of two operators.
+
+    .. note::
+       The *commutator* is the bracket that defines the bosonic algebra; the anti-commutator is well
+       defined but carries no comparable structural meaning. It is provided for completeness and for
+       operators built from products of ladder operators, where either bracket may be the useful one.
+
+    The anti-commutator is defined as:
+
+    .. math::
+
+       \{A, B\} = AB + BA
+
+    Operators which support this method must implement the :class:`.SupportsCommutators` protocol.
+
+    .. note::
+       Both inputs must be of the same operator type. This will also determine the output type.
+
+    .. doctest::
+
+       >>> from qiskit_bosons.operators import BosonOperator, ann, cre
+       >>> from qiskit_bosons.operators.library import anti_commutator
+       >>> b = BosonOperator.from_dict({(ann(0),): 1.0})
+       >>> b_dag = BosonOperator.from_dict({(cre(0),): 1.0})
+       >>> expected = BosonOperator.from_dict({(cre(0), ann(0)): 2.0, (): 1.0})
+       >>> anti_commutator(b, b_dag).equiv(expected)
+       True
+
+    Args:
+        op_a: the operator :math:`A` above.
+        op_b: the operator :math:`B` above.
+
+    Returns:
+        The anti-commutator :math:`\{A, B\}`.
+    """
+    return op_a._anti_commutator_(op_a, op_b)
+
+
+def double_commutator(op_a: T, op_b: T, op_c: T, sign: bool) -> T:
+    r"""Computes the double-commutator of three operators.
+
+    The double-commutator is defined as follows (see also Chapter 13.6, *Equation of motion
+    methods*, page 479 of [1]_; the ``sign=False`` case is the symmetric double commutator
+    :math:`[A, B, C]` appearing in Equation (2) of [2]_):
+
+    If ``sign`` is ``False``, it returns
+
+    .. math::
+         [[A, B], C]/2 + [A, [B, C]]/2 = (2ABC + 2CBA - BAC - CAB - ACB - BCA)/2.
+
+    If ``sign`` is ``True``, it returns
+
+    .. math::
+         \{[A, B], C\}/2 + \{A, [B, C]\}/2 = (2ABC - 2CBA - BAC + CAB - ACB + BCA)/2.
+
+    Operators which support this method must implement the :class:`.SupportsCommutators` protocol.
+
+    .. note::
+       All three inputs must be of the same operator type. This will also determine the output type.
+
+    .. doctest::
+
+       >>> from qiskit_bosons.operators import BosonOperator, ann, cre
+       >>> from qiskit_bosons.operators.library import double_commutator
+       >>> op1 = BosonOperator.from_dict({(cre(0), ann(1)): 1.0})
+       >>> op2 = BosonOperator.from_dict({(cre(1), ann(0)): 1.0})
+       >>> op3 = BosonOperator.from_dict({(cre(0), ann(0)): 1.0})
+       >>> result = double_commutator(op1, op2, op3, False)
+       >>> other = double_commutator(op1, op2, op3, True)
+       >>> result.equiv(other)
+       False
+       >>> scaled = double_commutator(3.0 * op1, op2, op3, False)
+       >>> scaled.equiv(3.0 * result)
+       True
+
+    .. [1] R. McWeeny. Methods of Molecular Quantum Mechanics.
+           2nd Edition, Academic Press, 1992. ISBN 0-12-486552-6.
+    .. [2] P. J. Ollitrault, A. Miessen, I. Tavernelli. Molecular Quantum Dynamics: A Quantum
+           Computing Perspective. Acc. Chem. Res. 54, 4229-4238 (2021).
+           https://doi.org/10.1021/acs.accounts.1c00514
+
+    Args:
+        op_a: the operator :math:`A` above.
+        op_b: the operator :math:`B` above.
+        op_c: the operator :math:`C` above.
+        sign: the nature of the outer (anti-)commutator as per the definition above.
+
+    Returns:
+        The double-commutator as per the definition above.
+    """
+    return op_a._double_commutator_(op_a, op_b, op_c, sign)

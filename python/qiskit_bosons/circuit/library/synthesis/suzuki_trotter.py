@@ -1,0 +1,255 @@
+# This code is a Qiskit project.
+#
+# (C) Copyright IBM 2026.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at https://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
+
+"""The higher-order Suzuki-Trotter bosonic product formula."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from qiskit_bosons.circuit import BosonicCircuit
+
+    from ..evolution import Evolution
+
+
+def _recurse(order: int, blocks: list[tuple[int, float]]) -> list[tuple[int, float]]:
+    """Recursively builds the symmetric Suzuki decomposition of one sweep over ``blocks``.
+
+    Args:
+        order: the order of the formula. Assumed to be ``1`` or positive and even, as validated by
+            :class:`BosonicSuzukiTrotter`.
+        blocks: one ``(index, time_scale)`` pair per factor of a single sweep.
+
+    Returns:
+        The ordered factors of the decomposition, as ``(index, time_scale)`` pairs. Indices repeat.
+    """
+    if order == 1:
+        return list(blocks)
+
+    if order == 2:
+        # the symmetric sandwich: halve every factor but the last, which becomes the middle
+        halves = [(index, scale / 2) for index, scale in blocks[:-1]]
+        return [*halves, blocks[-1], *reversed(halves)]
+
+    # Suzuki's recursion: five order-(k-2) sweeps, four at `reduction` and one at `1 - 4 * reduction`
+    reduction = 1 / (4 - 4 ** (1 / (order - 1)))
+    outer = _recurse(order - 2, [(index, scale * reduction) for index, scale in blocks])
+    inner = _recurse(order - 2, [(index, scale * (1 - 4 * reduction)) for index, scale in blocks])
+    # NOTE: `2 * outer` repeats the *list*, it does not scale the coefficients
+    return 2 * outer + inner + 2 * outer
+
+
+def _suzuki_schedule(
+    order: int, num_factors: int, reps: int, merge_adjacent: bool = True
+) -> list[tuple[int, float]]:
+    """Builds the full evolution schedule of a Suzuki-Trotter formula.
+
+    Args:
+        order: the order of the formula.
+        num_factors: the number of factors the evolved operator is split into.
+        reps: the number of times to repeat the formula.
+        merge_adjacent: whether to fuse neighboring entries of the same factor.
+
+    Returns:
+        The ordered ``(factor_index, time_scale)`` pairs to emit. Each scale is a fraction of the
+        gate's total evolution time; the scales of any one factor always sum to ``1``.
+    """
+    if num_factors == 1:
+        # A single factor commutes with itself, so the formula is exact at any order and the
+        # decomposition collapses to one gate carrying the whole evolution time. Recursing here would
+        # emit up to 5**((order - 2) / 2) gates that merely re-split the same operator.
+        return [(0, 1.0)]
+
+    sweep = _recurse(order, [(index, 1.0) for index in range(num_factors)])
+    schedule = reps * [(index, scale / reps) for index, scale in sweep]
+    return _merge_adjacent(schedule) if merge_adjacent else schedule
+
+
+def _merge_adjacent(schedule: list[tuple[int, float]]) -> list[tuple[int, float]]:
+    """Fuses consecutive entries of the same factor into one, summing their time scales.
+
+    Two neighboring exponentials of the same factor satisfy ``exp(a H) exp(b H) = exp((a + b) H)``,
+    so the fusion is exact. It removes the repeated factor at the seams between repetitions
+    (``A B A | A B A`` becomes ``A B 2A B A``) as well as those between the sub-sweeps of the
+    higher-order recursion.
+
+    Args:
+        schedule: the ordered ``(index, time_scale)`` pairs.
+
+    Returns:
+        The schedule with no two neighboring entries sharing an index.
+    """
+    merged: list[tuple[int, float]] = []
+    for index, scale in schedule:
+        if merged and merged[-1][0] == index:
+            merged[-1] = (index, merged[-1][1] + scale)
+        else:
+            merged.append((index, scale))
+    return merged
+
+
+class BosonicSuzukiTrotter:
+    r"""The higher-order Suzuki-Trotter product formula, applied in bosonic space.
+
+    A product formula composes the factors of an operator symmetrically, so that the leading error
+    terms cancel. For :math:`\texttt{order} = 2` and factors :math:`H_j`, the approximation is the
+    palindrome
+
+    .. math::
+
+        e^{-i t \sum_j H_j} \approx
+        \left( \prod_{j<n} e^{-i \frac{t}{2} H_j} \right) e^{-i t H_n}
+        \left( \prod_{j<n} e^{-i \frac{t}{2} H_j} \right)^{\mathrm{R}},
+
+    where :math:`\mathrm{R}` denotes the reversed order. Higher even orders are built from this by
+    Suzuki's recursion, each level composing five sweeps of the level below.
+
+    The evolved operator is split by its :attr:`~qiskit_bosons.operators.OperatorTrait.groups` when
+    it has them (see :ref:`grouping_explanation`), and term-by-term otherwise. Every order splits it
+    the same way: what a higher order changes is the ordering of the factors and their time scales, not
+    the partition.
+
+    Splitting along the groups is something this stage can do and Qiskit's qubit-side
+    :class:`~qiskit.synthesis.SuzukiTrotter` cannot: once the operator has been mapped and handed to
+    a :class:`~qiskit.circuit.library.PauliEvolutionGate`, the grouping is gone, and the formula can
+    only subdivide the terms within the one operator it is given.
+
+    .. note::
+       A higher order buys accuracy with depth: an order-:math:`k` formula emits roughly
+       :math:`5^{(k-2)/2}` times as many factors as an order-2 one. Increasing :attr:`reps` instead
+       divides the evolution time into more, shorter steps, which reduces the error at a different
+       rate for the same kind of cost. Which is the better trade depends on the operator.
+
+    .. note::
+       Applying this in bosonic space at all is optional, and it composes with the product formula
+       chosen for the boson-to-qubit stage. Where both approximate, the accuracy of the result is
+       governed by the weaker of the two. Bosonic factors are, moreover, exact *before* the
+       occupation truncation and only approximately so afterwards (the truncated algebra does not
+       close), so a reference value should be computed at the same ``max_occupation``.
+
+    .. caution::
+       Each factor must be Hermitian for its exponential to be unitary, which does not follow from
+       their sum being Hermitian: splitting a Hermitian operator can produce non-Hermitian groups (for
+       example, separating the hopping term :math:`b^\dagger_0 b_1` from its adjoint
+       :math:`b^\dagger_1 b_0`). It is the caller's responsibility to group accordingly; this is not
+       verified, but :func:`~qiskit_bosons.operators.terms.grouping.groups_are_hermitian` checks it.
+
+       An operator with no groups is split term by term, which has the same effect, since an
+       individual term is generally not Hermitian (the number operator :math:`b^\dagger_i b_i` and
+       the like being exceptions). The resulting factors are valid bosonic operators and the gates
+       are built without complaint, but the boson-to-qubit stage then rejects them:
+       :class:`~qiskit.circuit.library.PauliEvolutionGate` requires real coefficients and raises
+       ``ValueError: Operator contains complex coefficients, which are not supported``.
+
+       Note that the symmetrization partially cancels the error of a non-Hermitian factor, so an
+       incorrectly grouped operator can look markedly better at an even order than at first order
+       while still being wrong.
+    """
+
+    def __init__(self, order: int = 2, reps: int = 1, *, merge_adjacent: bool = True) -> None:
+        """Initializing an instance of this synthesis method can be done with the arguments below.
+
+        Args:
+            order: the order of the product formula. Must be ``1`` (which reduces to
+                :class:`.BosonicLieTrotter`) or a positive even integer, since the Suzuki formulas
+                are symmetric.
+            reps: the number of times to repeat the formula, each repetition evolving for
+                ``time / reps``.
+            merge_adjacent: whether to fuse neighboring gates of the same factor into one, summing
+                their evolution times. See :attr:`merge_adjacent`.
+
+        Raises:
+            ValueError: if ``order`` is neither ``1`` nor a positive even integer, or if ``reps`` is
+                not positive.
+        """
+        # `order < 1` must be rejected explicitly: zero and negative even integers pass the parity
+        # check, and the recursion would then never reach its base case.
+        if order != 1 and (order < 2 or order % 2 != 0):
+            raise ValueError(
+                "The Suzuki product formulas are symmetric and therefore only defined for an order "
+                f"of 1 or a positive even order, but got {order}."
+            )
+        if reps < 1:
+            raise ValueError(f"The number of repetitions must be positive, but got {reps}.")
+
+        self.order = order
+        """The order of the product formula."""
+
+        self.reps = reps
+        """The number of times the product formula is repeated."""
+
+        self.merge_adjacent = merge_adjacent
+        """Whether neighboring gates of the same factor are fused into one.
+
+        The palindromic structure makes the last factor of one repetition (and of each sub-sweep of
+        a higher order) the first of the next. Their exponentials combine exactly, as
+        :math:`e^{-i a H} e^{-i b H} = e^{-i (a + b) H}`, so fusing them shortens the circuit without
+        changing the product formula. Disable this to obtain the textbook gate sequence.
+
+        This only sees the seams created by a single synthesis. Merging across gate boundaries is
+        the job of :class:`.MergeEvolutions`.
+        """
+
+    def synthesize(self, gate: Evolution) -> BosonicCircuit:
+        """Synthesizes the gate into the ordered factors of the product formula.
+
+        See the class documentation for the formula this implements.
+
+        Args:
+            gate: the gate to synthesize.
+
+        Returns:
+            A :class:`.BosonicCircuit` holding one narrowed :class:`.Evolution` gate per factor of
+            the formula. A factor may appear more than once, at different evolution times.
+        """
+        # deferred imports: `qiskit_bosons.circuit` imports this subpackage's siblings at module load
+        from qiskit_bosons.circuit import BosonicCircuit
+
+        from ..evolution import Evolution
+
+        definition = BosonicCircuit(gate.num_modes)
+
+        # keep the factors around rather than re-splitting per factor: the formula revisits each of
+        # them, so building them once is cheaper
+        if gate.operator.has_groups():
+            factors = gate.operator.split_out_groups()
+        else:
+            factors = [
+                gate.operator.__class__.from_terms([term]) for term in gate.operator.iter_terms()
+            ]
+
+        time = gate.params[0]
+        for index, scale in _suzuki_schedule(
+            self.order, len(factors), self.reps, self.merge_adjacent
+        ):
+            factor = factors[index]
+
+            # reduce each operator to act only on the non-idle part of the register
+            active = factor.get_support()
+            num_active = len(active)
+            active_idx = iter(range(num_active))
+            idle_idx = iter(range(num_active, gate.num_modes))
+            permutation = [
+                next(active_idx) if idx in active else next(idle_idx)
+                for idx in range(gate.num_modes)
+            ]
+            relabeled = factor.relabel_modes(permutation)
+
+            # the time carries the formula's scale; scaling the operator instead would drop its
+            # groups and make the emitted gate's label misreport the physics
+            definition.append(
+                Evolution(num_active, relabeled, time=time * scale, atomic=True),
+                [definition.modes[idx] for idx in sorted(active)],
+            )
+
+        return definition

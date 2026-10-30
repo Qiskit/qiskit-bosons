@@ -1,0 +1,122 @@
+---
+
+# Populates the base-branch caches that the branch-protection workflows read.  This is not a
+# branch-protection requirement, just a CI performance improvement.
+#
+# GitHub scopes Actions caches by branch.  A pull request can *read* caches written on its base branch,
+# but anything it writes goes to a scope belonging to that pull request alone -- restorable only by
+# re-runs of the same pull request, never by another one.  There is no way to opt out of that isolation,
+# so without a `push`-triggered run on the target branches every pull request would miss on its first
+# run, warm a private scope, and then discard it on merge.  Only a handful of triggers may write the
+# default-branch scope at all (`push`, `schedule` and `workflow_dispatch` among them; notably *not*
+# `merge_group`), which is what makes this workflow the mechanism that makes the caches pay off.
+#
+# The only expensive artifact in this project's CI is the Qiskit wheel that the development suite builds
+# from Qiskit's `main`.  There is no Qiskit C API to compile, because this package links Qiskit
+# through `qiskit-pyo3-ffi`.  This workflow keeps that wheel cache fresh.
+#
+# It deliberately only builds and caches; it runs no test suite.  The merge-queue rules already require
+# the suites to have passed on the literal commits being fast-forwarded onto these branches, so
+# re-running them here would be waste.
+#
+# Not warmed here: the coverage leg, because `coverage.yml` has its own `push` trigger on these branches
+# and so writes the base-branch scope for free.
+
+name: Update caches
+
+on:
+  push:
+    branches:
+      - main
+      - 'stable/**'
+  # To re-warm the caches by hand if an entry is ever evicted (unused entries are dropped after 7 days)
+  # or deliberately deleted.  `workflow_dispatch` may write the default-branch cache scope, so a manual
+  # run is as good as a push here.
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.repository }}-${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  # The owner guard lives here alone: every other job `needs: config`, so skipping this one skips the
+  # whole graph and forks don't burn their Actions minutes warming our caches.
+  config:
+    name: Configure
+    if: github.repository_owner == 'Qiskit'
+    uses: ./.github/workflows/config.yml
+
+  qiskit-wheel:
+    name: Qiskit wheel
+    needs: config
+    runs-on: ${{ matrix.config.runner }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      # These legs must mirror the ones in `branch-protection.yml` that run the development suite: a
+      # cache is only worth writing if its key is one a pull-request job will actually look up.  The
+      # key covers the runner OS and architecture, the Python minor version and the Qiskit ref, so
+      # every distinct combination needs its own leg here.
+      matrix:
+        config:
+          - runner: ${{ needs.config.outputs.runner-linux-x86_64 }}
+            python-version: ${{ needs.config.outputs.python-old }}
+          - runner: ${{ needs.config.outputs.runner-linux-x86_64 }}
+            python-version: ${{ needs.config.outputs.python-new }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        name: Install Python
+        with:
+          python-version: ${{ matrix.config.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install Rust
+        run: rustup toolchain install --profile minimal --no-self-update
+
+      # Mirrors the key construction in `test_development_versions.yml`; keep the two in step.
+      - name: Resolve Qiskit ref
+        id: resolve
+        shell: bash
+        run: |
+          set -euo pipefail
+          ref=$(git ls-remote https://github.com/Qiskit/qiskit HEAD | cut -f1)
+          if [[ -z "$ref" ]]; then
+            echo "::error::failed to resolve the tip of Qiskit's main" >&2
+            exit 1
+          fi
+          echo "Resolved Qiskit ref: $ref"
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+          minor=$(printf '%s' "${{ matrix.config.python-version }}" | cut -d. -f1,2)
+          echo "prefix=qiskit-wheel-v1 | ${RUNNER_OS} | ${RUNNER_ARCH} | py${minor}" >> "$GITHUB_OUTPUT"
+
+      - name: Restore Qiskit wheel
+        id: cache
+        uses: actions/cache/restore@v6
+        with:
+          path: build/qiskit/dist/*.whl
+          key: ${{ steps.resolve.outputs.prefix }} | ${{ steps.resolve.outputs.ref }}
+          lookup-only: true
+
+      - name: Build Qiskit wheel from source
+        if: steps.cache.outputs.cache-hit != 'true'
+        shell: bash
+        env:
+          QISKIT_REF: ${{ steps.resolve.outputs.ref }}
+        run: |
+          set -euo pipefail
+          python -m pip install -U pip build
+          git clone --filter=blob:none https://github.com/Qiskit/qiskit build/qiskit
+          cd build/qiskit
+          git checkout "$QISKIT_REF"
+          git rev-parse HEAD
+          python -m build --wheel
+
+      - name: Save Qiskit wheel
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: build/qiskit/dist/*.whl
+          key: ${{ steps.resolve.outputs.prefix }} | ${{ steps.resolve.outputs.ref }}
