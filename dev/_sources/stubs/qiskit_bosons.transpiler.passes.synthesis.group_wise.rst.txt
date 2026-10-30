@@ -1,0 +1,6 @@
+﻿group\_wise
+===========
+
+.. currentmodule:: qiskit_bosons.transpiler.passes.synthesis
+
+.. autofunction:: group_wise

@@ -1,0 +1,94 @@
+﻿BosonicLieTrotter
+=================
+
+.. currentmodule:: qiskit_bosons.circuit.library.synthesis
+
+.. autoclass:: BosonicLieTrotter
+   :show-inheritance:
+   :no-members:
+   :no-inherited-members:
+   :special-members:
+
+
+  
+  
+   .. rubric:: Attributes
+    
+   .. autoattribute:: order
+   .. autoattribute:: reps
+   .. autoattribute:: merge_adjacent
+  
+  
+  
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+  
+  
+  
+  
+  
+  
+   .. rubric:: Inherited Methods
+    
+   .. automethod:: synthesize
+  
+  
+  

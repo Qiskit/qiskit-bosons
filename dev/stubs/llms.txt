@@ -1,0 +1,72 @@
+# Qiskit Bosons
+
+> Qiskit Bosons extends Qiskit with tools for working with bosonic systems: a bosonic operator data structure, a framework and library for encoding bosonic operators as qubit operators, and a framework and library for synthesizing bosonic quantum circuits, integrated into Qiskit's transpiler pipeline. The core is written in Rust and exposed through a first-party Python API.
+
+
+2026, Qiskit addons team
+
+## Pages in this subsection
+
+- [OperatorTrait](qiskit_bosons.operators.OperatorTrait.html.md): A protocol indicating all methods implemented by operator classes.
+- [BosonAction](qiskit_bosons.operators.boson_action.BosonAction.html.md): A bosonic creation or annihilation action.
+- [BosonOperator](qiskit_bosons.operators.BosonOperator.html.md): A bosonic operator.
+- [cre](qiskit_bosons.operators.cre.html.md): Constructs a creation action on the bosonic mode at &#96;mode&#96;.
+- [ann](qiskit_bosons.operators.ann.html.md): Constructs an annihilation action on the bosonic mode at &#96;mode&#96;.
+- [commutator](qiskit_bosons.operators.library.commutator.html.md): Computes the commutator of two operators.
+- [anti_commutator](qiskit_bosons.operators.library.anti_commutator.html.md): Computes the anti-commutator of two operators.
+- [double_commutator](qiskit_bosons.operators.library.double_commutator.html.md): Computes the double-commutator of three operators.
+- [position](qiskit_bosons.operators.library.position.html.md): Builds the dimensionless position (quadrature) operator of a single mode.
+- [momentum](qiskit_bosons.operators.library.momentum.html.md): Builds the dimensionless momentum (quadrature) operator of a single mode.
+- [group_coeff_means](qiskit_bosons.operators.terms.group_coeff_means.html.md): Returns the mean absolute coefficient magnitude of each group.
+- [groups_are_hermitian](qiskit_bosons.operators.terms.groups_are_hermitian.html.md): Returns, for each group, whether the operator formed by that group’s terms is Hermitian.
+- [groups_have_uniform_coeffs](qiskit_bosons.operators.terms.groups_have_uniform_coeffs.html.md): Returns, for each group, whether all of its coefficients are numerically equal.
+- [filter_diagonal_terms](qiskit_bosons.operators.terms.filter_diagonal_terms.html.md): Filters out the terms of an operator that are diagonal in the occupation-number basis.
+- [canonical_order](qiskit_bosons.operators.terms.canonical_order.html.md): Returns a copy of an operator with its terms sorted into a canonical order.
+- [group_order](qiskit_bosons.operators.terms.group_order.html.md): Returns a copy of an operator with its terms ordered by group index.
+- [order_terms](qiskit_bosons.operators.terms.order_terms.html.md): Returns a copy of an operator with its terms reordered by a user-provided key.
+- [LevelEncoding](qiskit_bosons.mappers.LevelEncoding.html.md): The layout of the levels of a single system on qubits.
+- [LevelSpec](qiskit_bosons.mappers.LevelSpec.html.md): The truncation of a register of bosonic modes and the encoding that lays it out on qubits.
+- [map_boson_action_generators](qiskit_bosons.mappers.map_boson_action_generators.html.md): Map a &#96;BosonOperator&#96; to another operator type.
+- [occupation_encoding](qiskit_bosons.mappers.library.occupation_encoding.html.md): Map a &#96;BosonOperator&#96; to a &#96;SparseObservable&#96;.
+- [BosonicDAGCircuit](qiskit_bosons.circuit.BosonicDAGCircuit.html.md): A type alias of &#96;DAGCircuit&#96;.
+- [BosonicMode](qiskit_bosons.circuit.BosonicMode.html.md): A type alias of &#96;Qubit&#96;.
+- [BosonicRegister](qiskit_bosons.circuit.BosonicRegister.html.md): A type alias of &#96;QubitRegister&#96;.
+- [BosonicSpecifier](qiskit_bosons.circuit.BosonicSpecifier.html.md): A type alias equivalent to Qiskit’s &#96;QubitSpecifier&#96; but for bosonic modes.
+- [BosonicCircuit](qiskit_bosons.circuit.BosonicCircuit.html.md): A wrapper around &#96;QuantumCircuit&#96; for expressing bosonic circuits.
+- [BosonicGate](qiskit_bosons.circuit.BosonicGate.html.md): The base class for all bosonic gates.
+- [InitializeModes](qiskit_bosons.circuit.library.InitializeModes.html.md): Prepares a bosonic Fock state.
+- [ModeRotation](qiskit_bosons.circuit.library.ModeRotation.html.md): Implements a passive linear-optical mode transformation.
+- [Evolution](qiskit_bosons.circuit.library.Evolution.html.md): Implements the time evolution of a bosonic operator.
+- [B2BSynthesisPlugin](qiskit_bosons.circuit.library.synthesis.B2BSynthesisPlugin.html.md): The protocol for plugins to the &#96;B2BSynthesis&#96; transpiler pass.
+- [B2BSynthesisPluginManager](qiskit_bosons.circuit.library.synthesis.B2BSynthesisPluginManager.html.md): A simple manager of the installed boson-to-boson synthesis plugins.
+- [BosonicLieTrotter](qiskit_bosons.circuit.library.synthesis.BosonicLieTrotter.html.md): The first-order Lie-Trotter product formula, applied in bosonic space.
+- [BosonicSuzukiTrotter](qiskit_bosons.circuit.library.synthesis.BosonicSuzukiTrotter.html.md): The higher-order Suzuki-Trotter product formula, applied in bosonic space.
+- [BosonicQDrift](qiskit_bosons.circuit.library.synthesis.BosonicQDrift.html.md): A synthesis method that Trotterizes an &#96;Evolution&#96; via the qDRIFT protocol.
+- [BosonicClementsDecomposition](qiskit_bosons.circuit.library.synthesis.BosonicClementsDecomposition.html.md): The decomposition of a mode rotation into a mesh of two-mode rotations and phases.
+- [B2QLayout](qiskit_bosons.transpiler.B2QLayout.html.md): A mapping of bosonic mode registers to quantum registers.
+- [BosonicPassManager](qiskit_bosons.transpiler.BosonicPassManager.html.md): A transpiler pass manager converting one &#96;BosonicCircuit&#96; to another.
+- [BosonicCircuitToDAG](qiskit_bosons.transpiler.BosonicCircuitToDAG.html.md): Converts a &#96;BosonicCircuit&#96; to a &#96;BosonicDAGCircuit&#96;.
+- [BosonicDAGToCircuit](qiskit_bosons.transpiler.BosonicDAGToCircuit.html.md): Converts a &#96;BosonicDAGCircuit&#96; to a &#96;BosonicCircuit&#96;.
+- [QuantumDAGToCircuit](qiskit_bosons.transpiler.QuantumDAGToCircuit.html.md): Converts a &#96;DAGCircuit&#96; to a &#96;QuantumCircuit&#96;.
+- [B2BSynthesis](qiskit_bosons.transpiler.passes.B2BSynthesis.html.md): A transpilation pass breaking gates down into smaller ones in bosonic space.
+- [B2BSynthesisConfig](qiskit_bosons.transpiler.passes.optimization.b2b_synthesis.B2BSynthesisConfig.html.md): The dictionary type used to configure the &#96;B2BSynthesis.methods&#96;.
+- [MergeEvolutions](qiskit_bosons.transpiler.passes.MergeEvolutions.html.md): A transpilation pass merging consecutive &#96;Evolution&#96; gates of the same operator.
+- [RelabelModes](qiskit_bosons.transpiler.passes.RelabelModes.html.md): A transpilation pass to relabel the bosonic modes.
+- [CustomB2QLayout](qiskit_bosons.transpiler.passes.CustomB2QLayout.html.md): Sets the user-provided &#96;B2QLayout&#96; in the transpiler.
+- [OccupationB2QLayout](qiskit_bosons.transpiler.passes.OccupationB2QLayout.html.md): Maps bosonic modes to the qubits a &#96;LevelSpec&#96; assigns them.
+- [B2QSynthesis](qiskit_bosons.transpiler.passes.B2QSynthesis.html.md): A transpilation pass to map boson-based circuit instructions to qubit-based ones.
+- [B2QSynthesisConfig](qiskit_bosons.transpiler.passes.synthesis.b2q_synthesis.B2QSynthesisConfig.html.md): The dictionary type used to configure the &#96;B2QSynthesis.methods&#96;.
+- [B2QSynthesisPlugin](qiskit_bosons.transpiler.passes.synthesis.B2QSynthesisPlugin.html.md): The protocol for plugins to the &#96;B2QSynthesis&#96; transpiler pass.
+- [B2QSynthesisPluginManager](qiskit_bosons.transpiler.passes.synthesis.B2QSynthesisPluginManager.html.md): A simple manager of the installed boson-to-qubit synthesis plugins.
+- [MapperFnEvolutionSynthesis](qiskit_bosons.transpiler.passes.synthesis.MapperFnEvolutionSynthesis.html.md): A &#96;B2QSynthesisPlugin&#96; for transpiling &#96;Evolution&#96; under a custom mapping.
+- [OccupationInitializeModesSynthesis](qiskit_bosons.transpiler.passes.synthesis.OccupationInitializeModesSynthesis.html.md): A &#96;B2QSynthesisPlugin&#96; for transpiling &#96;InitializeModes&#96;.
+- [group_wise](qiskit_bosons.transpiler.passes.synthesis.group_wise.html.md): Wraps a mapper function so that it maps an operator one group at a time.
+- [simplify](qiskit_bosons.transpiler.passes.synthesis.simplify.html.md): Wraps a mapper function so that it simplifies the operator it returns.
+- [map_node_single_register](qiskit_bosons.transpiler.passes.utils.map_node_single_register.html.md): Map the single bosonic mode register acted upon by the circuit operation.
+- [generate_preset_occupation_pass_manager](qiskit_bosons.transpiler.presets.generate_preset_occupation_pass_manager.html.md): Generates a preset transpiler pipeline for the occupation basis, from a &#96;LevelSpec&#96;.
+- [givens_decomposition](qiskit_bosons.linalg.givens_decomposition.html.md): Decomposes a unitary matrix into Givens rotations and diagonal phases.
+- [SupportsCommutators](qiskit_bosons.protocols.SupportsCommutators.html.md): A Protocol indicating support for efficient commutator generation.
+
+## Optional
+
+- [Top-level llms.txt](../llms.txt): Complete documentation index.

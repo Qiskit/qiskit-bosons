@@ -1,0 +1,6 @@
+﻿cre
+===
+
+.. currentmodule:: qiskit_bosons.operators
+
+.. autofunction:: cre

@@ -1,0 +1,23 @@
+# Qiskit Bosons
+
+> Qiskit Bosons extends Qiskit with tools for working with bosonic systems: a bosonic operator data structure, a framework and library for encoding bosonic operators as qubit operators, and a framework and library for synthesizing bosonic quantum circuits, integrated into Qiskit's transpiler pipeline. The core is written in Rust and exposed through a first-party Python API.
+
+
+2026, Qiskit addons team
+
+## Pages in this subsection
+
+- [Overview](overview.html.md): Overview of the Qiskit Bosons guides, grouped by topic, with links to each one.
+- [Simulate Bose-Hubbard dynamics with a choice of encoding](bose_hubbard.html.md): End-to-end tutorial for the time dynamics of the one-dimensional Bose-Hubbard model: build the circuit on bosonic modes, defer the truncation and the boson-to-qubit encoding to transpile time, and check the evolved site densities against an exact reference.
+- [More guides](index.html.md): Table of contents of all Qiskit Bosons guides.
+- [Design principles of operator representations](operators.html.md): Design principles of the BosonOperator in qiskit_bosons.operators: exact sums of ladder-operator products with no occupation cutoff, how to build, inspect, and combine operators, and how to compare two of them.
+- [Group operator terms: use the operator structure](grouping.html.md): How to assign group indices to the terms of a BosonOperator, check that each group is Hermitian or has uniform coefficients, and lay out the operator so that picking a few groups stays cheap.
+- [Map operator representations](mappers.html.md): How to map a BosonOperator to a qubit operator with the occupation encoding: truncate the Fock space, choose a level encoding, and understand what each choice costs.
+- [Work with bosonic circuits](circuit.html.md): How to build, compose, and repeat a BosonicCircuit, which expresses a computation on bosonic modes with no truncation, encoding, or qubit count, so that one circuit can be lowered under several encodings.
+- [Rotate bosonic modes](mode_rotation.html.md): How to mix bosonic modes with a ModeRotation gate, the passive linear-optics transformation of a beamsplitter and phase-shifter network, and how to decompose it with the Clements mesh or map it to qubits directly.
+- [Transpile bosonic circuits](transpilation.html.md): How to transpile a BosonicCircuit to a qubit QuantumCircuit, where the truncation and the encoding are chosen, through the stages of the bosonic transpiler pipeline.
+- [Synthesize an Evolution gate in bosonic space](bosonic_synthesis.html.md): How to synthesize an Evolution gate into smaller bosonic gates with product formulas (Trotter and qDRIFT) before any truncation or encoding is chosen, on one gate or across a whole circuit, and why this reduces the error between non-commuting groups.
+
+## Optional
+
+- [Top-level llms.txt](../llms.txt): Complete documentation index.

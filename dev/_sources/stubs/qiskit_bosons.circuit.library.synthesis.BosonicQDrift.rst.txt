@@ -1,0 +1,93 @@
+﻿BosonicQDrift
+=============
+
+.. currentmodule:: qiskit_bosons.circuit.library.synthesis
+
+.. autoclass:: BosonicQDrift
+   :show-inheritance:
+   :no-members:
+   :no-inherited-members:
+   :special-members:
+
+
+  
+  
+   .. rubric:: Attributes
+    
+   .. autoattribute:: num_terms
+   .. autoattribute:: weights
+  
+  
+  
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+  
+  
+   .. rubric:: Methods
+    
+   .. automethod:: synthesize
+  
+  
+  
+  
+  
+  
+  

@@ -1,0 +1,120 @@
+﻿OccupationB2QLayout
+===================
+
+.. currentmodule:: qiskit_bosons.transpiler.passes
+
+.. autoclass:: OccupationB2QLayout
+   :show-inheritance:
+   :no-members:
+   :no-inherited-members:
+   :special-members:
+
+
+  
+  
+   .. rubric:: Attributes
+    
+   .. autoattribute:: spec
+  
+  
+  
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+  
+  
+   .. rubric:: Methods
+    
+   .. automethod:: run
+  
+  
+  
+  
+  
+   .. rubric:: Inherited Methods
+    
+   .. automethod:: execute
+   .. automethod:: name
+   .. automethod:: update_status
+  
+  
+  

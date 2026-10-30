@@ -1,0 +1,98 @@
+﻿B2BSynthesisPluginManager
+=========================
+
+.. currentmodule:: qiskit_bosons.circuit.library.synthesis
+
+.. autoclass:: B2BSynthesisPluginManager
+   :show-inheritance:
+   :no-members:
+   :no-inherited-members:
+   :special-members:
+
+
+  
+  
+   .. rubric:: Attributes
+    
+   .. autoattribute:: plugins
+  
+  
+  
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+  
+  
+   .. rubric:: Methods
+    
+   .. automethod:: method
+   .. automethod:: method_names
+   .. automethod:: op_names
+  
+  
+  
+  
+  
+  
+  

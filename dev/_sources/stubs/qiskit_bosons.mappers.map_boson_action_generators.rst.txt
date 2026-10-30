@@ -1,0 +1,6 @@
+﻿map\_boson\_action\_generators
+==============================
+
+.. currentmodule:: qiskit_bosons.mappers
+
+.. autofunction:: map_boson_action_generators

@@ -1,0 +1,6 @@
+﻿BosonicRegister
+===============
+
+.. currentmodule:: qiskit_bosons.circuit
+
+.. autodata:: BosonicRegister

@@ -1,0 +1,6 @@
+﻿momentum
+========
+
+.. currentmodule:: qiskit_bosons.operators.library
+
+.. autofunction:: momentum

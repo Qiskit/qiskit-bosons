@@ -1,0 +1,6 @@
+﻿BosonAction
+===========
+
+.. currentmodule:: qiskit_bosons.operators.boson_action
+
+.. autodata:: BosonAction

@@ -1,0 +1,120 @@
+﻿CustomB2QLayout
+===============
+
+.. currentmodule:: qiskit_bosons.transpiler.passes
+
+.. autoclass:: CustomB2QLayout
+   :show-inheritance:
+   :no-members:
+   :no-inherited-members:
+   :special-members:
+
+
+  
+  
+   .. rubric:: Attributes
+    
+   .. autoattribute:: layout
+  
+  
+  
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+  
+  
+   .. rubric:: Methods
+    
+   .. automethod:: run
+  
+  
+  
+  
+  
+   .. rubric:: Inherited Methods
+    
+   .. automethod:: execute
+   .. automethod:: name
+   .. automethod:: update_status
+  
+  
+  
