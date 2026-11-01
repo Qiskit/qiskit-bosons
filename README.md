@@ -116,7 +116,7 @@ repository to cite the appropriate reference(s).
 ### Deprecation policy
 
 > [!IMPORTANT]
-> This policy does **not** until the first release is tagged.
+> This policy does **not** apply until the first release is tagged.
 
 This package follows [semantic versioning](https://semver.org/) and is guided by the principles in
 [Qiskit's deprecation policy](https://github.com/Qiskit/qiskit/blob/main/DEPRECATION.md). Breaking
