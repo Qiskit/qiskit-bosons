@@ -77,12 +77,15 @@
 
   
 
+  
+
 
 
   
   
    .. rubric:: Methods
     
+   .. automethod:: sampler
    .. automethod:: synthesize
   
   

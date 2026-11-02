@@ -65,6 +65,7 @@
 - [BosonicSuzukiTrotter](stubs/qiskit_bosons.circuit.library.synthesis.BosonicSuzukiTrotter.html.md): The higher-order Suzuki-Trotter product formula, applied in bosonic space.
 - [BosonicQDrift](stubs/qiskit_bosons.circuit.library.synthesis.BosonicQDrift.html.md): A synthesis method that Trotterizes an &#96;Evolution&#96; via the qDRIFT protocol.
 - [BosonicClementsDecomposition](stubs/qiskit_bosons.circuit.library.synthesis.BosonicClementsDecomposition.html.md): The decomposition of a mode rotation into a mesh of two-mode rotations and phases.
+- [QDriftSampler](stubs/qiskit_bosons.circuit.library.synthesis.QDriftSampler.html.md): The draws of the qDRIFT protocol for one &#96;Evolution&#96; gate.
 - [Transpiler](pydoc/qiskit_bosons.transpiler.html.md): How Qiskit Bosons transpiles a BosonicCircuit to a QuantumCircuit: the transpilation stages, the pass manager, and the layout of bosonic modes onto qubits.
 - [B2QLayout](stubs/qiskit_bosons.transpiler.B2QLayout.html.md): A mapping of bosonic mode registers to quantum registers.
 - [BosonicPassManager](stubs/qiskit_bosons.transpiler.BosonicPassManager.html.md): A transpiler pass manager converting one &#96;BosonicCircuit&#96; to another.

@@ -156,6 +156,20 @@ sampling identically. See the class docstring.
 
 ### Methods
 
+#### sampler(gate)
+
+Prepares the draws for a gate without taking any of them.
+
+* **Parameters:**
+  **gate** ([*Evolution*](qiskit_bosons.circuit.library.Evolution.html.md#qiskit_bosons.circuit.library.Evolution)) – the gate to sample.
+* **Returns:**
+  The sampler, from which gates can be drawn in a batch or one at a time.
+* **Raises:**
+  [**ValueError**](https://docs.python.org/3/builtins/exceptions.html#ValueError) – if [`weights`](#qiskit_bosons.circuit.library.synthesis.BosonicQDrift.weights) was supplied and its length does not match the number of
+      groups (or terms) of the operator of `gate`.
+* **Return type:**
+  [QDriftSampler](qiskit_bosons.circuit.library.synthesis.QDriftSampler.html.md#qiskit_bosons.circuit.library.synthesis.QDriftSampler)
+
 #### synthesize(gate)
 
 Synthesizes the gate into `num_terms` sampled gates.
