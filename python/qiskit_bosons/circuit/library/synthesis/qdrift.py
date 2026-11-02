@@ -27,6 +27,154 @@ if TYPE_CHECKING:
     from ..evolution import Evolution
 
 
+class QDriftSampler:
+    """The draws of the qDRIFT protocol for one :class:`.Evolution` gate.
+
+    This is what :meth:`.BosonicQDrift.sampler` returns. It holds the distribution derived from the
+    gate, and exists so that a caller that needs to look at each draw can take them one at a time,
+    whereas :meth:`.BosonicQDrift.synthesize` takes them all at once.
+    """
+
+    def __init__(
+        self,
+        gate: Evolution,
+        num_terms: int,
+        weights: np.ndarray | None,
+        rng: np.random.Generator,
+    ) -> None:
+        """Initializing a sampler can be done with the arguments below.
+
+        Args:
+            gate: the gate to sample.
+            num_terms: the number of gates the whole sample holds.
+            weights: the sampling weights, or ``None`` to derive them from the operator of ``gate``.
+            rng: the random number generator to draw from.
+
+        Raises:
+            ValueError: if ``weights`` does not hold one entry per group (or term) of the operator.
+        """
+        operator = gate.operator
+        has_groups = operator.has_groups()
+
+        if weights is not None:
+            # One weight per group when the operator is grouped, else one per term. `len()` is free,
+            # while `num_groups()` walks the group indices natively -- a cost only paid when weights
+            # were supplied, and the price of catching a wrong-length array here rather than
+            # sampling against the wrong operator.
+            expected = operator.num_groups() if has_groups else len(operator)
+            if len(weights) != expected:
+                granularity = "groups" if has_groups else "terms"
+                raise ValueError(
+                    f"The sampling weights must hold exactly one entry per sampled piece, that "
+                    f"is {expected} entries for an operator with {expected} {granularity}, but "
+                    f"got {len(weights)}."
+                )
+
+        self._operator = operator
+        self._synthesis = gate.synthesis
+        self._num_modes = gate.num_modes
+        self._rng = rng
+
+        # `terms` is a list of operator terms, or None when the operator carries groups
+        self._terms: list[Any] | None
+        if not has_groups:
+            # NOTE: the qDRIFT protocol normalizes each term to unit magnitude because the
+            # evolution time is entirely dictated by `delta` (computed below). Only the magnitude of
+            # a coefficient sets its sampling probability, but its sign fixes the direction of the
+            # rotation and must be preserved for the Trotterization to approximate the target time
+            # evolution.
+            self._terms = [(actions, np.sign(coeff)) for actions, coeff in operator.iter_terms()]
+            # NOTE: skipped entirely when the caller supplied the weights, which is what makes
+            # hoisting this out of a large ensemble loop worthwhile: `get_coeffs()` copies one value
+            # per term out of the operator on every call.
+            if weights is None:
+                weights = np.abs(operator.get_coeffs())
+        else:
+            if weights is None:
+                # NOTE: computed natively rather than by reducing `get_coeffs()` and `groups`. Those
+                # two accessors each copy one value per *ungrouped* term out of the operator, only
+                # for both arrays to be aggregated straight back down to one weight per group. The
+                # mean is the magnitude of one atomic group, which is the scale the protocol needs:
+                # grouping is what makes each sampled piece Hermitian, and hence its evolution
+                # unitary, to begin with.
+                weights = np.array(group_coeff_means(operator))
+            # NOTE: the groups are not materialized here. Only a small fraction of the (potentially
+            # much larger) set of groups ends up being sampled, so each sampled group's operator is
+            # looked up lazily via `split_out_groups`, once it is known which were drawn.
+            self._terms = None
+
+        # NOTE: the weights are non-negative, so this sum is the protocol's `lambda`. It both
+        # normalizes the sampling distribution and sets the shared evolution time, which is why a
+        # supplied array's scale is not free (see `BosonicQDrift`).
+        lambd = np.sum(weights)
+        self.time = (lambd * gate.params[0]) / num_terms
+        """The evolution time :math:`\\delta` of every sampled gate."""
+
+        self._num_terms = num_terms
+        self._probabilities = weights / lambd
+        self._cdf: np.ndarray | None = None
+
+    def _gate(self, term: Any) -> Evolution:
+        from ..evolution import Evolution
+
+        if isinstance(term, tuple):
+            # in this case, we have already normalized the coefficient to its sign
+            unit_terms = [term]
+        else:
+            # NOTE: the coefficients of a grouped operator's terms have not been normalized yet. Keep
+            # each term's sign (dropping only its magnitude) so that the sampled rotation points in
+            # the correct direction.
+            unit_terms = [(actions, np.sign(coeff)) for actions, coeff in term.iter_terms()]
+        op = self._operator.__class__.from_terms(unit_terms)
+        # the synthesis is carried over although an atomic gate never consults it
+        return Evolution(
+            self._num_modes, op, time=self.time, synthesis=self._synthesis, atomic=True
+        )
+
+    def sample(self, size: int | None = None) -> list[Evolution]:
+        """Draws ``size`` gates in a single batched call.
+
+        Args:
+            size: the number of gates to draw. Defaults to ``num_terms``.
+
+        Returns:
+            The drawn atomic :class:`.Evolution` gates, in the order of the draws.
+        """
+        size = self._num_terms if size is None else size
+        # a single batched call builds the cumulative-probability structure once, whereas each
+        # scalar `choice()` call would rebuild it from scratch
+        indices = self._rng.choice(
+            np.arange(len(self._probabilities)), size=size, p=self._probabilities
+        )
+        if self._terms is None:
+            # Only look up the (typically much smaller) set of distinct sampled groups, then map each
+            # draw back to its (possibly repeated) fetched operator.
+            unique_indices, inverse = np.unique(indices, return_inverse=True)
+            sampled = self._operator.split_out_groups(group_indices=unique_indices.tolist())
+            return [self._gate(sampled[i]) for i in inverse]
+        return [self._gate(self._terms[i]) for i in indices]
+
+    def draw(self) -> Evolution:
+        """Draws a single gate.
+
+        Returns:
+            The drawn atomic :class:`.Evolution` gate.
+        """
+        if self._cdf is None:
+            # Precomputed once, on first use, so that this can draw against it directly via
+            # `searchsorted` instead of calling `rng.choice(..., p=probabilities)`, which would
+            # rebuild this same cumulative sum from scratch on every single draw.
+            self._cdf = np.cumsum(self._probabilities)
+            # guards against float-sum drift from 1.0, matching numpy's own choice()
+            self._cdf /= self._cdf[-1]
+        # Equivalent to `rng.choice(np.arange(len(weights)), p=probabilities)`: numpy's own
+        # implementation of weighted sampling, reusing the cached `cdf`.
+        index = int(self._cdf.searchsorted(self._rng.random(), side="right"))
+        if self._terms is None:
+            return self._gate(self._operator.split_out_groups(group_indices=[index])[0])
+        return self._gate(self._terms[index])
+
+
 class BosonicQDrift:
     r"""A synthesis method that Trotterizes an :class:`.Evolution` via the qDRIFT protocol.
 
@@ -217,6 +365,21 @@ class BosonicQDrift:
 
         self._rng = rng if isinstance(rng, np.random.Generator) else np.random.default_rng(rng)
 
+    def sampler(self, gate: Evolution) -> QDriftSampler:
+        """Prepares the draws for a gate without taking any of them.
+
+        Args:
+            gate: the gate to sample.
+
+        Returns:
+            The sampler, from which gates can be drawn in a batch or one at a time.
+
+        Raises:
+            ValueError: if :attr:`weights` was supplied and its length does not match the number of
+                groups (or terms) of the operator of ``gate``.
+        """
+        return QDriftSampler(gate, self.num_terms, self.weights, self._rng)
+
     def synthesize(self, gate: Evolution) -> BosonicCircuit:
         """Synthesizes the gate into ``num_terms`` sampled gates.
 
@@ -230,97 +393,10 @@ class BosonicQDrift:
             ValueError: if :attr:`weights` was supplied and its length does not match the number of
                 groups (or terms) of the operator of ``gate``.
         """
-        # deferred imports: `qiskit_bosons.circuit` imports this subpackage's siblings at module load
+        # deferred import: `qiskit_bosons.circuit` imports this subpackage's siblings at module load
         from qiskit_bosons.circuit import BosonicCircuit
 
-        from ..evolution import Evolution
-
-        operator = gate.operator
-        has_groups = operator.has_groups()
-        weights = self.weights
-
-        if weights is not None:
-            # One weight per group when the operator is grouped, else one per term. `len()` is free,
-            # while `num_groups()` walks the group indices natively -- a cost only paid when weights
-            # were supplied, and the price of catching a wrong-length array here rather than
-            # sampling against the wrong operator.
-            expected = operator.num_groups() if has_groups else len(operator)
-            if len(weights) != expected:
-                granularity = "groups" if has_groups else "terms"
-                raise ValueError(
-                    f"The sampling weights must hold exactly one entry per sampled piece, that "
-                    f"is {expected} entries for an operator with {expected} {granularity}, but "
-                    f"got {len(weights)}."
-                )
-
-        # `terms` is a list of operator terms, or None when the operator carries groups
-        terms: list[Any] | None
-        if not has_groups:
-            # NOTE: the qDRIFT protocol normalizes each term to unit magnitude because the
-            # evolution time is entirely dictated by `delta` (computed below). Only the magnitude of
-            # a coefficient sets its sampling probability, but its sign fixes the direction of the
-            # rotation and must be preserved for the Trotterization to approximate the target time
-            # evolution.
-            terms = [(actions, np.sign(coeff)) for actions, coeff in operator.iter_terms()]
-            # NOTE: skipped entirely when the caller supplied the weights, which is what makes
-            # hoisting this out of a large ensemble loop worthwhile: `get_coeffs()` copies one value
-            # per term out of the operator on every call.
-            if weights is None:
-                weights = np.abs(operator.get_coeffs())
-        else:
-            if weights is None:
-                # NOTE: computed natively rather than by reducing `get_coeffs()` and `groups`. Those
-                # two accessors each copy one value per *ungrouped* term out of the operator, only
-                # for both arrays to be aggregated straight back down to one weight per group. The
-                # mean is the magnitude of one atomic group, which is the scale the protocol needs:
-                # grouping is what makes each sampled piece Hermitian, and hence its evolution
-                # unitary, to begin with.
-                weights = np.array(group_coeff_means(operator))
-            # NOTE: the groups are not materialized here. Only a small fraction of the (potentially
-            # much larger) set of groups ends up being sampled, so each sampled group's operator is
-            # looked up lazily via `split_out_groups`, once it is known which were drawn.
-            terms = None
-
-        # NOTE: the weights are non-negative, so this sum is the protocol's `lambda`. It both
-        # normalizes the sampling distribution and sets the shared evolution time, which is why a
-        # supplied array's scale is not free (see the class docstring).
-        lambd = np.sum(weights)
-        delta = (lambd * gate.params[0]) / self.num_terms
-        probabilities = weights / lambd
-
-        # Every index is drawn in a single batched call instead of `num_terms` separate scalar
-        # draws, which is considerably faster (each scalar `choice()` call rebuilds the
-        # cumulative-probability structure from scratch, whereas a batched call builds it once).
-        sampled_indices = self._rng.choice(
-            np.arange(len(weights)), size=self.num_terms, p=probabilities
-        )
-        if terms is None:
-            # Only look up the (typically much smaller) set of distinct sampled groups, then map each
-            # draw back to its (possibly repeated) fetched operator.
-            unique_indices, inverse = np.unique(sampled_indices, return_inverse=True)
-            sampled = operator.split_out_groups(group_indices=unique_indices.tolist())
-            draws = [sampled[i] for i in inverse]
-        else:
-            draws = [terms[i] for i in sampled_indices]
-
         definition = BosonicCircuit(gate.num_modes)
-        for term in draws:
-            if isinstance(term, tuple):
-                # in this case, we have already normalized the coefficient to its sign
-                unit_terms = [term]
-            else:
-                # NOTE: the coefficients of a grouped operator's terms have not been normalized yet.
-                # Keep each term's sign (dropping only its magnitude) so that the sampled rotation
-                # points in the correct direction.
-                unit_terms = [(actions, np.sign(coeff)) for actions, coeff in term.iter_terms()]
-            definition.append(
-                Evolution(
-                    gate.num_modes,
-                    operator.__class__.from_terms(unit_terms),
-                    time=delta,
-                    synthesis=gate.synthesis,
-                    atomic=True,
-                ),
-                definition.modes,
-            )
+        for sampled in self.sampler(gate).sample():
+            definition.append(sampled, definition.modes)
         return definition

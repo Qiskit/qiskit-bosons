@@ -214,3 +214,61 @@ class TestSampling:
             pass_ = BosonicPassManager([B2BSynthesis({"Evolution": BosonicQDrift(6, rng=42)})])
             runs.append([pass_.run(circuit).count_ops() for _ in range(3)])
         assert runs[0] == runs[1]
+
+
+class TestSampler:
+    def _gate(self) -> Evolution:
+        return Evolution(3, _ungrouped(), time=TIME)
+
+    def test_synthesize_equals_the_batched_sample(self):
+        gate = self._gate()
+        circuit = BosonicQDrift(9, rng=5).synthesize(gate)
+        sampled = BosonicQDrift(9, rng=5).sampler(gate).sample()
+
+        assert _terms([i.operation for i in circuit._inner.data]) == _terms(sampled)
+
+    def test_sample_size_defaults_to_num_terms_and_can_be_overridden(self):
+        sampler = BosonicQDrift(4, rng=1).sampler(self._gate())
+
+        assert len(sampler.sample()) == 4
+        assert len(sampler.sample(7)) == 7
+
+    def test_sampled_gates_are_atomic_with_the_shared_time(self):
+        sampler = BosonicQDrift(4, rng=1).sampler(self._gate())
+
+        for gate in sampler.sample():
+            assert gate.atomic
+            assert float(gate.params[0]) == pytest.approx(sampler.time)
+        assert sampler.time == pytest.approx(10.0 * TIME / 4)
+
+    def test_draw_follows_the_distribution(self):
+        gate = self._gate()
+        # the term order of `from_dict` is not guaranteed, so find the term acting on mode 1
+        weights = [
+            0.0 if {action[1] for action in actions} == {1} else 1.0
+            for actions, _ in gate.operator.iter_terms()
+        ]
+        assert sorted(weights) == [0.0, 1.0, 1.0]
+        sampler = BosonicQDrift(5, rng=3, weights=weights).sampler(gate)
+
+        supports = {tuple(sorted(sampler.draw().operator.get_support())) for _ in range(50)}
+
+        # the zero-weight term (mode 1) is never drawn
+        assert supports == {(0,), (2,)}
+
+    def test_draw_works_for_a_grouped_operator(self):
+        operator = group_order(
+            BosonOperator.from_terms_with_groups(
+                [((cre(0), ann(1)), 0.5, 0), ((cre(1), ann(0)), 0.5, 0), ((cre(2), ann(2)), 1.0, 1)]
+            )
+        )
+        sampler = BosonicQDrift(3, rng=0).sampler(Evolution(3, operator, time=TIME))
+
+        gate = sampler.draw()
+
+        assert gate.atomic
+        assert len(gate.operator) in (1, 2)
+
+    def test_sampler_rejects_weights_of_the_wrong_length(self):
+        with pytest.raises(ValueError, match="exactly one entry per sampled piece"):
+            BosonicQDrift(3, weights=[1.0, 1.0]).sampler(self._gate())
