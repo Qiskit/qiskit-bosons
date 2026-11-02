@@ -90,12 +90,13 @@ upon. These are the entry points of the ``qiskit_bosons.circuit.synthesis`` grou
    BosonicSuzukiTrotter
    BosonicQDrift
    BosonicClementsDecomposition
+   QDriftSampler
 """
 
 from .clements_decomposition import BosonicClementsDecomposition
 from .lie_trotter import BosonicLieTrotter
 from .plugin import B2BSynthesisPlugin, B2BSynthesisPluginManager
-from .qdrift import BosonicQDrift
+from .qdrift import BosonicQDrift, QDriftSampler
 from .suzuki_trotter import BosonicSuzukiTrotter
 
 __all__ = [
@@ -105,4 +106,5 @@ __all__ = [
     "BosonicLieTrotter",
     "BosonicQDrift",
     "BosonicSuzukiTrotter",
+    "QDriftSampler",
 ]
