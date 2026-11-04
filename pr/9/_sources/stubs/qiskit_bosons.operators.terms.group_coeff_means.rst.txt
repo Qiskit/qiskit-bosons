@@ -1,6 +1,0 @@
-﻿group\_coeff\_means
-===================
-
-.. currentmodule:: qiskit_bosons.operators.terms
-
-.. autofunction:: group_coeff_means

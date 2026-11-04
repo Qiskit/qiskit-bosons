@@ -1,6 +1,0 @@
-﻿canonical\_order
-================
-
-.. currentmodule:: qiskit_bosons.operators.terms
-
-.. autofunction:: canonical_order
