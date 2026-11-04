@@ -121,7 +121,7 @@ One thing to know first:
 
 `VERSION.txt` (committed) is the source of truth for Python; `make version-bump VERSION=...` syncs it with the Rust `Cargo.toml` workspace version and refreshes `Cargo.lock` via `tools/set_version.py`. `version.py` appends a git sha for dev builds and is excluded from coverage. Use PEP 440 forms (`0.2.0.dev0`, `1.0.0rc1`, `1.0.0`).
 
-**Pre-release status:** there is no tagged release yet, so `main` is an **unstable development branch**. Until the first tagged release lands, we don't track release notes — breaking changes can be made freely and don't need `reno` entries.
+**Release status:** the package is in alpha (`0.1.0a1`). Release notes are tracked with `reno`: user-facing changes need an entry. Breaking changes are still possible during the alpha, but should be called out in an `upgrade` note.
 
 **Releasing and CI:** the release pipeline (wheels via `cibuildwheel`, `release.yml`, `stable/X.Y` branches with Mergify backports, GitHub Pages docs previews) is described in [`docs/release-process.md`](docs/release-process.md). All test/lint/docs workflows are reusable `workflow_call` units driven by `branch-protection.yml` (whose single `Finalize` job is the only required check) and `on-nightly.yml`. Qiskit is bounded to `qiskit>=2.5.0,<2.7`: the vendored `qiskit-pyo3-ffi` snapshot must come from the **oldest** supported minor (Qiskit only appends C API slots), and C API functions newer than the lower bound must not be used (see the crate's README).
 
@@ -130,5 +130,5 @@ One thing to know first:
 - **Every source file requires a copyright header** — `tools/verify_headers.py` enforces this in `make lint` (run over `crates docs python tests tools`, ignoring vendored `crates/qiskit-pyo3-ffi`).
 - Python: `ruff` (line-length 100, target py311, Google docstrings), `mypy` (py311).
 - Rust: `cargo fmt`, edition 2024, MSRV 1.95.
-- Release notes: managed via `reno` (`releasenotes/`), but **not tracked yet**.
+- Release notes: managed via `reno` (`releasenotes/`). User-facing changes need a `reno` entry; a note is filed under the first release tag reachable from the commit that adds it, so a backport must carry its note on the `stable/X.Y` branch to appear in that release. Notes for a released minor are kept in a `releasenotes/notes/X.Y/` subdirectory (housekeeping only — `reno` recurses, and the path never affects which release a note lands in).
 - **Commutator argument order:** `commutator(a, b)` is the mathematical `[A, B]`. It composes with `__matmul__` (right multiplication, `A B`) and **not** `__and__` — following Qiskit, `__and__` is `compose`, i.e. *left* multiplication: `A & B == B @ A`. Building the brackets out of it silently negates every commutator.

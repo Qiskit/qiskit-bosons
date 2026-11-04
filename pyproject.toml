@@ -15,7 +15,7 @@ description = "A toolkit for working with bosonic systems"
 license = "Apache-2.0"
 license-files = ["LICENSE.txt"]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "Natural Language :: English",

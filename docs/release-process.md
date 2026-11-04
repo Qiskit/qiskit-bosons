@@ -4,9 +4,6 @@ This describes how to cut a release of `qiskit-bosons`. It assumes push access t
 [upstream repository](https://github.com/Qiskit/qiskit-bosons) and that the `pypi` deployment
 environment is configured for trusted publishing.
 
-> **Note:** No release has been cut yet. Release notes are not tracked until the `0.1` release; see
-> [Release notes](#release-notes-and-the-first-release).
-
 Each released minor version gets:
 
 - a `X.Y.Z` tag, which is what actually triggers publication (`.github/workflows/release.yml`);
@@ -75,16 +72,10 @@ Optionally move the release's notes into `releasenotes/notes/X.Y/` to keep the t
 is cosmetic; `reno` recurses into subdirectories and the path never changes which release a note
 belongs to.
 
-## Release notes and the first release
+## Release notes
 
-Release notes are deliberately **not tracked until this package's own `0.1` release**, so
-`releasenotes/notes/` is empty today and changes do not need a `reno` entry. When preparing `0.1`:
-
-1. Write the notes for the release (a `prelude` plus the categorised features, upgrade notes and
-   fixes), commit them on `main`, and only then cut the release as described above.
-2. Update the "Pre-release status" paragraph of `CLAUDE.md`, the note in `docs/README.md` and the
-   "Deprecation policy" notices in `README.md` and `docs/index.rst`, which currently say the policy
-   does not apply yet.
+Release notes are tracked from the `0.1.0a1` release on. Before cutting a release, make sure its
+notes (a `prelude` plus the categorized features, upgrade notes and fixes) are committed on `main`.
 
 ## Backporting a fix
 
