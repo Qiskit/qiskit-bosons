@@ -750,7 +750,7 @@ dependencies = [
 
 [[package]]
 name = "qiskit-bosons-core"
-version = "0.1.0-dev0"
+version = "0.1.0-a1"
 dependencies = [
  "nalgebra",
  "ndarray",
@@ -764,7 +764,7 @@ dependencies = [
 
 [[package]]
 name = "qiskit-bosons-pyext"
-version = "0.1.0-dev0"
+version = "0.1.0-a1"
 dependencies = [
  "ndarray",
  "num-complex",

@@ -14,10 +14,6 @@
 
 # Qiskit Bosons
 
-> [!WARNING]
-> This package is under active development!
-> If you have feedback, please [open an issue](https://github.com/Qiskit/qiskit-bosons/issues/new/choose).
-
 `qiskit-bosons` extends the Qiskit SDK with tools for working on bosonic systems. Within its scope
 it provides the following:
 
@@ -47,7 +43,7 @@ branch and of labeled pull requests are published there by CI; see
 Install this package via `pip`, when possible:
 
 ```bash
-pip install 'qiskit-bosons'
+pip install --pre 'qiskit-bosons'
 ```
 
 For more installation information, refer to these [installation instructions](docs/install.rst).
@@ -114,9 +110,6 @@ repository to cite the appropriate reference(s).
 ----------------------------------------------------------------------------------------------------
 
 ### Deprecation policy
-
-> [!IMPORTANT]
-> This policy does **not** apply until the first release is tagged.
 
 This package follows [semantic versioning](https://semver.org/) and is guided by the principles in
 [Qiskit's deprecation policy](https://github.com/Qiskit/qiskit/blob/main/DEPRECATION.md). Breaking
