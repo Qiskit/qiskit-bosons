@@ -8,10 +8,6 @@ Qiskit Bosons
                  truncation, bosonic circuits, and a transpilation pipeline with boson-to-boson and
                  boson-to-qubit stages that turns them into qubit circuits.
 
-.. warning::
-   This package is under active development!
-   If you have feedback, please `open an issue <https://github.com/Qiskit/qiskit-bosons/issues/new/choose>`_.
-
 ``qiskit-bosons`` extends the Qiskit SDK with tools for working on bosonic
 systems. Within its scope it provides the following:
 
@@ -60,10 +56,6 @@ applied later on. Both enter only at transpile time.
 
 Deprecation policy
 ------------------
-
-.. important::
-
-   This policy does **not** apply until the first release is tagged.
 
 We follow `semantic versioning <https://semver.org/>`_ and are guided by the principles in
 `Qiskit's deprecation policy <https://github.com/Qiskit/qiskit/blob/main/DEPRECATION.md>`_.

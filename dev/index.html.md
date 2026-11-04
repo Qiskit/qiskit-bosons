@@ -1,9 +1,5 @@
 # Qiskit Bosons
 
-#### WARNING
-This package is under active development!
-If you have feedback, please [open an issue](https://github.com/Qiskit/qiskit-bosons/issues/new/choose).
-
 `qiskit-bosons` extends the Qiskit SDK with tools for working on bosonic
 systems. Within its scope it provides the following:
 
@@ -47,9 +43,6 @@ cannot make any assumptions about the truncation and boson-to-qubit encoding
 applied later on. Both enter only at transpile time.
 
 ## Deprecation policy
-
-#### IMPORTANT
-This policy does **not** apply until the first release is tagged.
 
 We follow [semantic versioning](https://semver.org/) and are guided by the principles in
 [Qiskit’s deprecation policy](https://github.com/Qiskit/qiskit/blob/main/DEPRECATION.md).
