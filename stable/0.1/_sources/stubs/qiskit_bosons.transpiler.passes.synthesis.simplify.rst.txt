@@ -1,0 +1,6 @@
+﻿simplify
+========
+
+.. currentmodule:: qiskit_bosons.transpiler.passes.synthesis
+
+.. autofunction:: simplify

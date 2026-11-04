@@ -1,0 +1,6 @@
+﻿groups\_are\_hermitian
+======================
+
+.. currentmodule:: qiskit_bosons.operators.terms
+
+.. autofunction:: groups_are_hermitian

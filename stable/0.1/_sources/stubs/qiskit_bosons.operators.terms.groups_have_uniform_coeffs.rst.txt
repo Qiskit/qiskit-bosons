@@ -1,0 +1,6 @@
+﻿groups\_have\_uniform\_coeffs
+=============================
+
+.. currentmodule:: qiskit_bosons.operators.terms
+
+.. autofunction:: groups_have_uniform_coeffs

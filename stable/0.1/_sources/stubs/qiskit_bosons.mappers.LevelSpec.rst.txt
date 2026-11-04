@@ -1,0 +1,111 @@
+﻿LevelSpec
+=========
+
+.. currentmodule:: qiskit_bosons.mappers
+
+.. autoclass:: LevelSpec
+   :show-inheritance:
+   :no-members:
+   :no-inherited-members:
+   :special-members:
+
+
+  
+  
+   .. rubric:: Attributes
+    
+   .. autoattribute:: encoding
+   .. autoattribute:: is_uniform
+   .. autoattribute:: max_occupation
+   .. autoattribute:: num_modes
+   .. autoattribute:: offsets
+   .. autoattribute:: total_width
+   .. autoattribute:: widths
+  
+  
+  
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+  
+  
+   .. rubric:: Methods
+    
+   .. automethod:: resolve
+   .. automethod:: truncation
+  
+  
+  
+  
+  
+  
+  

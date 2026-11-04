@@ -5,6 +5,7 @@
 ## Builds
 
 - [dev](https://qiskit.github.io/qiskit-bosons/dev/llms.txt): the development branch (`main`)
+- [stable/0.1](https://qiskit.github.io/qiskit-bosons/stable/0.1/llms.txt): the 0.1 release series
 
 ## Released documentation
 
