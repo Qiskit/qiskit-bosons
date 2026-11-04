@@ -1,0 +1,10 @@
+# Installation instructions
+
+## Prerequisites
+
+To compile and install this package, you need to install the [Rust toolchain](https://rust-lang.org/tools/install/).
+
+## Installation
+
+Consult the guide below for installing the Python bindings. A C API is not
+available for this package yet.

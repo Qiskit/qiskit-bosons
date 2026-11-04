@@ -1,0 +1,6 @@
+﻿occupation\_encoding
+====================
+
+.. currentmodule:: qiskit_bosons.mappers.library
+
+.. autofunction:: occupation_encoding
