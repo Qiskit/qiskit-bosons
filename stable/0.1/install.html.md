@@ -24,10 +24,8 @@ The preferred method is to install from PyPI:
 ## Install from PyPI
 
 ```sh
-pip install --pre qiskit-bosons
+pip install qiskit-bosons
 ```
-
-The `--pre` flag is needed for as long as only pre-releases (such as `0.1.0a1`) are available.
 
 ## Install from source
 
