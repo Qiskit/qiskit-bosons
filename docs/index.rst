@@ -108,6 +108,7 @@ License
 
    Overview <guides/overview>
    Simulate Bose-Hubbard dynamics with a choice of encoding <guides/bose_hubbard>
+   Simulate spin chains with hard-core bosons <guides/spin_models>
    More guides <guides/index>
 
 .. toctree::

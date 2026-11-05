@@ -615,7 +615,8 @@ helper expands the projectors up front and merges the Pauli strings, each taking
 first occurrence, so it keeps the order that the mapper or ``group_wise`` chose. Wrap it inside
 ``group_wise``, as in ``group_wise(expand_projectors(mapper_fn))``. The other order merges terms
 across the groups. The expansion grows exponentially with the number of qubits that a diagonal term
-acts on, so use it with care under a unary encoding.
+acts on, so use it with care under a unary encoding. The :ref:`spin chain guide
+<spin_models_getting_started>` shows the effect on the Trotter error.
 
 Next steps
 ----------

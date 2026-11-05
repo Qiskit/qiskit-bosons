@@ -486,3 +486,5 @@ Next steps
 - :ref:`grouping_explanation` explains how to assign and check the groups that a product formula
   interleaves.
 - :ref:`bose_hubbard_getting_started` applies the repetition scheme to a complete example.
+- :ref:`spin_models_getting_started` chooses the groups and their order for Ising and Heisenberg
+  chains.
