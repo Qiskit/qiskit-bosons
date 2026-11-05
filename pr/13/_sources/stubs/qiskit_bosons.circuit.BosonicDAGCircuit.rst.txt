@@ -1,6 +1,0 @@
-﻿BosonicDAGCircuit
-=================
-
-.. currentmodule:: qiskit_bosons.circuit
-
-.. autodata:: BosonicDAGCircuit

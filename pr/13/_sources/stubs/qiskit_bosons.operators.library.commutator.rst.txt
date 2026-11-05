@@ -1,6 +1,0 @@
-﻿commutator
-==========
-
-.. currentmodule:: qiskit_bosons.operators.library
-
-.. autofunction:: commutator
