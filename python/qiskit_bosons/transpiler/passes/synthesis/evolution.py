@@ -17,9 +17,10 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
+import numpy as np
 from qiskit.circuit.library import PauliEvolutionGate
 from qiskit.dagcircuit import DAGCircuit, DAGOpNode
-from qiskit.quantum_info import SparseObservable
+from qiskit.quantum_info import SparseObservable, SparsePauliOp
 
 from qiskit_bosons.operators import OperatorTrait
 
@@ -110,6 +111,85 @@ def group_wise(mapper_fn: MapperFunction) -> MapperFunction:
         return accumulated
 
     return grouped
+
+
+_EXPAND_RELATIVE_TOL = 1e-14
+"""Coefficients below this fraction of the largest one are dropped by :func:`expand_projectors`."""
+
+
+def expand_projectors(mapper_fn: MapperFunction) -> MapperFunction:
+    r"""Wraps a mapper function so that it expands the projectors of its result into Paulis.
+
+    The occupation encodings write the number operator as a projector,
+    :math:`\lvert 1 \rangle\langle 1 \rvert`, which a :class:`~qiskit.quantum_info.SparseObservable`
+    stores as a single factor. :class:`~qiskit.circuit.library.PauliEvolutionGate` expands it to
+    :math:`(I - Z)/2` only when it synthesizes the gate, term by term and without merging what
+    cancels. The ``Z`` pieces of different terms then end up as separate rotations, interleaved with
+    the terms they do not commute with, and the result is not the evolution that the group stands for
+    even where the group is Hermitian and its Pauli form is a sum of commuting pieces.
+
+    This wrapper does that expansion up front and merges the Pauli terms that coincide, so a product
+    formula sees the operator that was meant. Each Pauli string takes the place of its first
+    occurrence, so the order that :func:`group_wise` or the mapper chose survives. Terms whose summed
+    coefficient is below a small fraction of the largest are dropped.
+
+    Use it to wrap any :type:`MapperFunction`, **inside** :func:`group_wise`::
+
+        MapperFnEvolutionSynthesis(group_wise(expand_projectors(mapper_fn)))
+
+    An operator without projectors is returned with its terms merged and nothing else changed.
+
+    .. warning::
+       The expansion is exponential in the number of qubits that a diagonal term acts on: a
+       projector product over :math:`w` qubits becomes :math:`2^w` Pauli terms. This is harmless for
+       the compact encodings at a small cutoff, but the unary encodings put every level of a mode on
+       its own qubit and can blow up. Apply it to the groups that need it, and do not use it on a
+       large operator.
+
+    .. caution::
+       Wrapping :func:`group_wise` with this function, as in ``expand_projectors(group_wise(...))``,
+       merges terms *across* groups and so discards the grouping. Put it inside.
+
+    Args:
+        mapper_fn: the mapper function to wrap.
+
+    Returns:
+        A mapper function that returns the Pauli expansion of whatever ``mapper_fn`` returns. It
+        does not alter the imaginary parts: an operator that is not Hermitian is still rejected by
+        :class:`~qiskit.circuit.library.PauliEvolutionGate`, exactly as without this wrapper.
+    """
+
+    def expanded(operator: OperatorTrait, num_qubits: int) -> SparseObservable:
+        mapped = mapper_fn(operator, num_qubits)
+        paulis = SparsePauliOp.from_sparse_observable(mapped)
+        if len(paulis) == 0:
+            return mapped
+        return SparseObservable.from_sparse_pauli_op(_merge_in_order(paulis))
+
+    return expanded
+
+
+def _merge_in_order(paulis: SparsePauliOp) -> SparsePauliOp:
+    """Sums the terms with the same Pauli string, ordered by where each string first appears.
+
+    ``SparsePauliOp.simplify`` is not used because it makes no promise about the order of its output.
+    Terms whose summed coefficient is below :data:`_EXPAND_RELATIVE_TOL` times the largest
+    coefficient are dropped. If every term cancels, a single zero identity term remains.
+    """
+    symplectic = np.concatenate([paulis.paulis.x, paulis.paulis.z], axis=1)
+    _, first, inverse = np.unique(symplectic, axis=0, return_index=True, return_inverse=True)
+    inverse = inverse.reshape(-1)
+
+    sums = np.zeros(len(first), dtype=complex)
+    np.add.at(sums, inverse, paulis.coeffs)
+
+    by_appearance = np.argsort(first)
+    sums = sums[by_appearance]
+    kept = np.abs(sums) > _EXPAND_RELATIVE_TOL * float(np.max(np.abs(paulis.coeffs)))
+    if not kept.any():
+        return SparsePauliOp.from_sparse_list([("", [], 0.0)], paulis.num_qubits)
+
+    return SparsePauliOp(paulis.paulis[first[by_appearance][kept]], sums[kept])
 
 
 class MapperFnEvolutionSynthesis:

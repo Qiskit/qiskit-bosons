@@ -21,9 +21,10 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+from qiskit import QuantumCircuit
 from qiskit.circuit.library import PauliEvolutionGate
 from qiskit.passmanager import MultiStagePassManager
-from qiskit.quantum_info import SparseObservable, Statevector
+from qiskit.quantum_info import Operator, SparseObservable, SparsePauliOp, Statevector
 from qiskit_bosons.mappers import LevelSpec
 from qiskit_bosons.mappers.library import occupation_encoding
 from qiskit_bosons.operators import BosonOperator, ann, cre
@@ -33,9 +34,11 @@ from qiskit_bosons.transpiler.passes import (
     MapperFnEvolutionSynthesis,
     OccupationB2QLayout,
     OccupationInitializeModesSynthesis,
+    expand_projectors,
     group_wise,
     simplify,
 )
+from scipy.linalg import expm
 
 from ..trotter_support import (
     MAX_OCCUPATION,
@@ -220,8 +223,141 @@ class TestThePluginPreservesTheMapperOrder:
             assert distance(np.asarray(state), exact) < 1e-6
 
 
+def _xxz_bond_group() -> BosonOperator:
+    """One bond of an XXZ chain: hopping, a density-density term and number terms, in one group.
+
+    Hard-core bosons (cutoff one), so a boson is a spin 1/2. The three pieces commute on a bond when
+    written as Paulis (XX + YY + ZZ), but not when the number terms are kept apart.
+    """
+    return BosonOperator.from_terms_with_groups(
+        [
+            ([cre(0), ann(1)], 1.0, 0),
+            ([cre(1), ann(0)], 1.0, 0),
+            ([cre(0), ann(0), cre(1), ann(1)], 2.8, 0),
+            ([cre(0), ann(0)], -1.4, 0),
+            ([cre(1), ann(1)], -1.4, 0),
+        ]
+    )
+
+
+def _hard_core_map(operator, num_qubits=2):
+    return occupation_encoding(operator, LevelSpec(1, "gray").resolve(2), num_qubits)
+
+
+class TestExpandProjectors:
+    def test_the_gate_of_an_unexpanded_group_is_not_the_exact_evolution(self):
+        """The reason the wrapper exists: the cancelling Z pieces are rotated one by one."""
+        terms = []
+        for left, right in ((0, 1), (2, 3)):
+            terms += [
+                ([cre(left), ann(right)], 1.0, 0),
+                ([cre(right), ann(left)], 1.0, 0),
+                ([cre(left), ann(left), cre(right), ann(right)], 2.8, 0),
+                ([cre(left), ann(left)], -1.4, 0),
+                ([cre(right), ann(right)], -1.4, 0),
+            ]
+        operator = BosonOperator.from_terms_with_groups(terms)
+        spec = LevelSpec(1, "gray").resolve(4)
+        raw = occupation_encoding(operator, spec, 4)
+        expanded = expand_projectors(lambda op, n: occupation_encoding(op, spec, n))(operator, 4)
+        target = Operator(expm(-0.8j * SparsePauliOp.from_sparse_observable(raw).to_matrix()))
+        for observable, should_match in ((raw, False), (expanded, True)):
+            circuit = QuantumCircuit(4)
+            circuit.append(PauliEvolutionGate(observable, time=0.8), range(4))
+            assert Operator(circuit.decompose(reps=3)).equiv(target) is should_match
+
+    def test_the_expansion_equals_the_operator(self):
+        operator = _xxz_bond_group()
+        before = _hard_core_map(operator)
+        after = expand_projectors(_hard_core_map)(operator, 2)
+        # only Pauli factors are left (`contains_projectors` is newer than the minimum Qiskit)
+        projectors = {SparseObservable.BitTerm.ZERO, SparseObservable.BitTerm.ONE}
+        assert not projectors & set(after.bit_terms)
+        np.testing.assert_allclose(
+            SparsePauliOp.from_sparse_observable(after).to_matrix(),
+            SparsePauliOp.from_sparse_observable(before).to_matrix(),
+            atol=1e-12,
+        )
+
+    def test_the_expanded_group_is_the_commuting_pauli_form(self):
+        """XX + YY + ZZ per bond: every pair of terms commutes, so one Lie step is exact."""
+        image = expand_projectors(_hard_core_map)(_xxz_bond_group(), 2)
+        assert sorted(SparsePauliOp.from_sparse_observable(image).paulis.to_labels()) == [
+            "II",
+            "XX",
+            "YY",
+            "ZZ",
+        ]
+        assert _max_imag(image) == 0.0
+
+    def test_each_string_takes_the_place_of_its_first_occurrence(self):
+        """Merging must not sort: the order is what a user chose, through the group indices.
+
+        Checked against a plain dictionary merge on random operators with many exact cancellations.
+        """
+        rng = np.random.default_rng(7)
+        for _ in range(300):
+            num_qubits = int(rng.integers(1, 5))
+            count = int(rng.integers(2, 24))
+            labels = ["".join(rng.choice(list("IXYZ"), num_qubits)) for _ in range(count)]
+            coeffs = rng.integers(-2, 3, count).astype(float)
+            expected = {}
+            for label, coeff in zip(labels, coeffs, strict=True):
+                expected[label] = expected.get(label, 0.0) + coeff
+            expected = {label: coeff for label, coeff in expected.items() if coeff != 0.0}
+            if not expected:
+                continue
+
+            observable = SparseObservable.from_sparse_pauli_op(SparsePauliOp(labels, coeffs))
+            image = expand_projectors(lambda _op, _n, obs=observable: obs)(None, num_qubits)
+            result = SparsePauliOp.from_sparse_observable(image)
+            assert result.paulis.to_labels() == list(expected)
+            np.testing.assert_allclose(result.coeffs.real, list(expected.values()))
+
+    def test_a_fully_cancelling_operator_leaves_a_zero_identity(self):
+        observable = SparseObservable.from_sparse_list([("Z", (0,), 1.0), ("Z", (0,), -1.0)], 2)
+        image = expand_projectors(lambda _op, _n: observable)(None, 2)
+        assert np.allclose(np.asarray(image.coeffs), 0.0)
+
+    def test_group_wise_inside_keeps_a_shared_string_in_each_group(self):
+        """A Pauli string that two groups share stays in both; outside, it moves to the first."""
+        operator = BosonOperator.from_terms_with_groups(
+            [
+                ([cre(0), ann(1)], 1.0, 0),
+                ([cre(1), ann(0)], 1.0, 0),
+                ([cre(0), ann(0)], 0.5, 0),
+                ([cre(0), ann(0)], 0.25, 1),
+                ([cre(1), ann(1)], 0.25, 1),
+            ]
+        )
+        inside = group_wise(expand_projectors(_hard_core_map))(operator, 2)
+        outside = expand_projectors(group_wise(_hard_core_map))(operator, 2)
+
+        def labels(observable):
+            return SparsePauliOp.from_sparse_observable(observable).paulis.to_labels()
+
+        assert labels(inside).count("IZ") == 2  # Z on mode 0, once per group
+        assert labels(outside).count("IZ") == 1  # merged across the group boundary
+        np.testing.assert_allclose(  # the same operator either way
+            SparsePauliOp.from_sparse_observable(inside).to_matrix(),
+            SparsePauliOp.from_sparse_observable(outside).to_matrix(),
+            atol=1e-12,
+        )
+
+    def test_a_non_hermitian_group_is_still_rejected_by_qiskit(self):
+        lone = BosonOperator.from_terms_with_groups([([cre(0), ann(1)], 1.0, 0)])
+        image = expand_projectors(_hard_core_map)(lone, 2)
+        with pytest.raises(ValueError, match="complex coefficients"):
+            PauliEvolutionGate(image, time=0.1)
+
+    def test_an_operator_without_terms_passes_through(self):
+        empty = BosonOperator.from_terms_with_groups([])
+        assert np.allclose(np.asarray(expand_projectors(_hard_core_map)(empty, 2).coeffs), 0.0)
+
+
 def test_helpers_are_importable_from_the_package_root():
     from qiskit_bosons.transpiler import passes
 
     assert passes.simplify is simplify
     assert passes.group_wise is group_wise
+    assert passes.expand_projectors is expand_projectors
