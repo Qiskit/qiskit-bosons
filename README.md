@@ -43,7 +43,7 @@ branch and of labeled pull requests are published there by CI; see
 Install this package via `pip`, when possible:
 
 ```bash
-pip install --pre 'qiskit-bosons'
+pip install 'qiskit-bosons'
 ```
 
 For more installation information, refer to these [installation instructions](docs/install.rst).

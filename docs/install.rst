@@ -34,9 +34,7 @@ Install from PyPI
 
 .. code:: sh
 
-    pip install --pre qiskit-bosons
-
-The ``--pre`` flag is needed for as long as only pre-releases (such as ``0.1.0a1``) are available.
+    pip install qiskit-bosons
 
 
 Install from source
