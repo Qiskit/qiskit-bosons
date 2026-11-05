@@ -8,8 +8,7 @@
 ## Pages
 
 - [Qiskit Bosons](index.html.md): Overview of Qiskit Bosons, an extension of the Qiskit SDK for bosonic systems: a bosonic operator data structure, boson-to-qubit encodings with a choice of truncation, bosonic circuits, and a transpilation pipeline with boson-to-boson and boson-to-qubit stages that turns them into qubit circuits.
-- [Installation instructions](install.html.md): Prerequisites for building Qiskit Bosons from source and a pointer to the installation instructions for the Python API. A C API is not available yet.
-- [Install the Python API](install-py.html.md): Install the Qiskit Bosons Python package from PyPI with pip, or from source for development, and how to verify and test the installation.
+- [Installation instructions](install.html.md): Install the Qiskit Bosons Python package from PyPI with pip, or from source for development, and how to verify and test the installation. A C API is not available yet.
 - [Overview](guides/overview.html.md): Overview of the Qiskit Bosons guides, grouped by topic, with links to each one.
 - [Simulate Bose-Hubbard dynamics with a choice of encoding](guides/bose_hubbard.html.md): End-to-end tutorial for the time dynamics of the one-dimensional Bose-Hubbard model: build the circuit on bosonic modes, defer the truncation and the boson-to-qubit encoding to transpile time, and check the evolved site densities against an exact reference.
 - [More guides](guides/index.html.md): Table of contents of all Qiskit Bosons guides.
