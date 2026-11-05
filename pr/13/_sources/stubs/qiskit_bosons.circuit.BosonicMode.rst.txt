@@ -1,0 +1,6 @@
+﻿BosonicMode
+===========
+
+.. currentmodule:: qiskit_bosons.circuit
+
+.. autodata:: BosonicMode
