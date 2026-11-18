@@ -12,9 +12,10 @@
 
 """Tests for the MergeEvolutions optimization pass.
 
-Two evolutions under the same operator compose exactly. The pass must merge those and nothing else,
-which for bosons includes operators that are only ``equiv``: the truncation does not commute with
-normal ordering, so such a merge would change the circuit.
+Two evolutions under the same operator compose exactly. The pass must merge those and nothing else.
+The operators are compared in the algebra of the bosons (with ``equiv``), where the circuit lives, so
+operators that only agree in normal order merge too; their lowered circuits can differ at the cutoff,
+which the truncation introduces.
 """
 
 from __future__ import annotations
@@ -227,14 +228,14 @@ def test_the_synthesis_of_the_first_gate_is_kept():
 
 
 def _ordered_pair() -> tuple[BosonOperator, BosonOperator]:
-    """``b b^dagger`` and ``b^dagger b + 1``: ``equiv``, but different once truncated."""
+    """``b b^dagger`` and ``b^dagger b + 1``: the same operator, different once truncated."""
     return (
         BosonOperator.from_dict({(ann(0), cre(0)): 1.0}),
         BosonOperator.from_dict({(cre(0), ann(0)): 1.0, (): 1.0}),
     )
 
 
-def test_operators_that_are_only_equiv_are_not_merged():
+def test_operators_that_agree_in_normal_order_are_merged():
     first, second = _ordered_pair()
     assert first.equiv(second, 1e-12)
 
@@ -242,11 +243,13 @@ def test_operators_that_are_only_equiv_are_not_merged():
     circuit.append(Evolution(1, first, time=0.4), circuit.modes)
     circuit.append(Evolution(1, second, time=0.7), circuit.modes)
 
-    assert len(_merge(circuit).op_nodes()) == 2
+    (merged,) = _merge(circuit).op_nodes()
+    assert merged.op.params == pytest.approx([1.1])
 
 
-def test_merging_equiv_operators_would_have_changed_the_circuit():
-    """This is why the pass does not use ``equiv``: the truncated unitaries really differ."""
+def test_merging_operators_that_agree_in_normal_order_changes_the_truncated_circuit():
+    """The consequence that the docs of the pass describe: the lowered unitaries differ at the cutoff,
+    which is an artifact of the truncation, not of the merge."""
     first, second = _ordered_pair()
     spec = LevelSpec(2, "gray").resolve(1)
 
