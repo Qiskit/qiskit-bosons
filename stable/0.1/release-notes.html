@@ -11,13 +11,13 @@
         <link rel="prefetch" href="_static/images/qiskit-dark-logo.svg" as="image">
 
     <!-- Generated with Sphinx 9.0.4 and Furo 2025.12.19 -->
-        <title>Release Notes - Qiskit Bosons 0.1.0a1+625bbab</title>
+        <title>Release Notes - Qiskit Bosons 0.1.0a1+1484286</title>
       <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/qiskit-sphinx-theme.css?v=fc6d6d93" />
     <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
     <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
-    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=6a604523" />
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" />
     <link rel="stylesheet" type="text/css" href="_static/katex-math.css?v=05624691" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">Qiskit Bosons 0.1.0a1+625bbab</div></a>
+      <a href="index.html"><div class="brand">Qiskit Bosons 0.1.0a1+1484286</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -190,7 +190,7 @@
     <img class="sidebar-logo only-dark" src="_static/images/qiskit-dark-logo.svg" alt="Dark Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">Qiskit Bosons 0.1.0a1+625bbab</span>
+  <span class="sidebar-brand-text">Qiskit Bosons 0.1.0a1+1484286</span>
   
 </a>
 <form class="sidebar-search-container" method="get" action="search.html" role="search">
@@ -368,6 +368,47 @@
         <article role="main" id="furo-main-content">
           <section id="release-notes">
 <span id="id1"></span><h1>Release Notes<a class="headerlink" href="#release-notes" title="Link to this heading">¶</a></h1>
+<section id="upcoming-release-stable-0-1">
+<span id="release-notes-upcoming-release-stable-0-1"></span><h2>Upcoming release (<code class="docutils literal notranslate"><span class="pre">stable/0.1</span></code>)<a class="headerlink" href="#upcoming-release-stable-0-1" title="Link to this heading">¶</a></h2>
+<section id="new-features">
+<span id="release-notes-upcoming-release-stable-0-1-new-features"></span><h3>New Features<a class="headerlink" href="#new-features" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="stubs/qiskit_bosons.circuit.library.Evolution.html#qiskit_bosons.circuit.library.Evolution" title="qiskit_bosons.circuit.library.Evolution"><code class="xref py py-class docutils literal notranslate"><span class="pre">Evolution</span></code></a> has a new <code class="docutils literal notranslate"><span class="pre">equiv</span></code> method, which compares
+two evolutions up to a tolerance on their times and their operators, and its instances are now
+hashable.</p></li>
+</ul>
+</section>
+<section id="upgrade-notes">
+<span id="release-notes-upcoming-release-stable-0-1-upgrade-notes"></span><h3>Upgrade Notes<a class="headerlink" href="#upgrade-notes" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="stubs/qiskit_bosons.transpiler.passes.MergeEvolutions.html#qiskit_bosons.transpiler.passes.MergeEvolutions" title="qiskit_bosons.transpiler.passes.MergeEvolutions"><code class="xref py py-class docutils literal notranslate"><span class="pre">MergeEvolutions</span></code></a> now merges two neighboring
+<a class="reference internal" href="stubs/qiskit_bosons.circuit.library.Evolution.html#qiskit_bosons.circuit.library.Evolution" title="qiskit_bosons.circuit.library.Evolution"><code class="xref py py-class docutils literal notranslate"><span class="pre">Evolution</span></code></a> gates whose operators are
+<a class="reference internal" href="stubs/qiskit_bosons.operators.BosonOperator.html#qiskit_bosons.operators.BosonOperator.equiv" title="qiskit_bosons.operators.BosonOperator.equiv"><code class="xref py py-meth docutils literal notranslate"><span class="pre">equiv()</span></code></a>, that is equal in normal order, such as
+<span class="math">\(b b^\dagger\)</span> and <span class="math">\(b^\dagger b + 1\)</span>. Before, it merged only operators that were the
+same products of ladder operators as written. A bosonic circuit lives in the untruncated algebra,
+where the merge is exact. The truncation that lowering to qubits introduces does not commute
+with normal ordering, so the lowered circuit of such a merge can differ from the one of the
+unmerged gates on the highest level of a mode, which is an artifact of the cutoff either way.
+To keep the lowered circuit the same with and without the pass, write the operators of
+evolutions on the same modes in one order, for example in normal order.</p></li>
+</ul>
+</section>
+<section id="bug-fixes">
+<span id="release-notes-upcoming-release-stable-0-1-bug-fixes"></span><h3>Bug Fixes<a class="headerlink" href="#bug-fixes" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>Two <a class="reference internal" href="stubs/qiskit_bosons.circuit.library.Evolution.html#qiskit_bosons.circuit.library.Evolution" title="qiskit_bosons.circuit.library.Evolution"><code class="xref py py-class docutils literal notranslate"><span class="pre">Evolution</span></code></a> gates for the same time on as many modes
+no longer compare equal when their operators differ. The gate used Qiskit’s equality of
+instructions, which compares the parameters and the definitions but not the operator, which is
+no parameter. It now compares its number of modes, its time and its operator, the latter with
+<a class="reference internal" href="stubs/qiskit_bosons.operators.BosonOperator.html#qiskit_bosons.operators.BosonOperator.equiv" title="qiskit_bosons.operators.BosonOperator.equiv"><code class="xref py py-meth docutils literal notranslate"><span class="pre">equiv()</span></code></a>, that is in the algebra of the bosons,
+where the circuit lives: <span class="math">\(b b^\dagger\)</span> and <span class="math">\(b^\dagger b + 1\)</span> are the same operator,
+and the order of the terms does not matter. The truncation of a mode only enters when the
+circuit is lowered to qubits. The <a class="reference internal" href="stubs/qiskit_bosons.circuit.BosonicGate.html#qiskit_bosons.circuit.BosonicGate.synthesis" title="qiskit_bosons.circuit.BosonicGate.synthesis"><code class="xref py py-attr docutils literal notranslate"><span class="pre">synthesis</span></code></a> and
+<a class="reference internal" href="stubs/qiskit_bosons.circuit.BosonicGate.html#qiskit_bosons.circuit.BosonicGate.atomic" title="qiskit_bosons.circuit.BosonicGate.atomic"><code class="xref py py-attr docutils literal notranslate"><span class="pre">atomic</span></code></a> flag are not compared: they decide how the
+gate is broken down, not what it is.</p></li>
+</ul>
+</section>
+</section>
 <section id="a1">
 <span id="release-notes-0-1-0a1"></span><h2>0.1.0a1<a class="headerlink" href="#a1" title="Link to this heading">¶</a></h2>
 <section id="prelude">
@@ -410,7 +451,7 @@ through first-party Python bindings.</p>
             
             <a href="https://github.com/pradyunsg/furo">Furo</a>
             <div class="last-updated">
-              Last updated on 2026/11/05</div>
+              Last updated on 2026/11/18</div>
           </div>
           <div class="right-details">
             
@@ -432,6 +473,12 @@ through first-party Python bindings.</p>
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Release Notes</a><ul>
+<li><a class="reference internal" href="#upcoming-release-stable-0-1">Upcoming release (<code class="docutils literal notranslate"><span class="pre">stable/0.1</span></code>)</a><ul>
+<li><a class="reference internal" href="#new-features">New Features</a></li>
+<li><a class="reference internal" href="#upgrade-notes">Upgrade Notes</a></li>
+<li><a class="reference internal" href="#bug-fixes">Bug Fixes</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#a1">0.1.0a1</a><ul>
 <li><a class="reference internal" href="#prelude">Prelude</a></li>
 </ul>
@@ -447,13 +494,13 @@ through first-party Python bindings.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=d80d8028"></script>
+</div><script src="_static/documentation_options.js?v=d346a3bf"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>
     <script src="_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="_static/copybutton.js?v=6dbb43f8"></script>
-    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="_static/design-tabs.js?v=fcb327ea"></script>
     <script src="_static/katex.min.js?v=5cc8ed51"></script>
     <script src="_static/auto-render.min.js?v=af98beb9"></script>
     <script src="_static/katex_autorenderer.js?v=bebc588a"></script>

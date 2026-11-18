@@ -10,13 +10,13 @@
         <link rel="prefetch" href="../_static/images/qiskit-dark-logo.svg" as="image">
 
     <!-- Generated with Sphinx 9.0.4 and Furo 2025.12.19 -->
-        <title>MergeEvolutions - Qiskit Bosons 0.1.0a1+625bbab</title>
+        <title>MergeEvolutions - Qiskit Bosons 0.1.0a1+1484286</title>
       <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/qiskit-sphinx-theme.css?v=fc6d6d93" />
     <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=6a604523" />
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" />
     <link rel="stylesheet" type="text/css" href="../_static/katex-math.css?v=05624691" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">Qiskit Bosons 0.1.0a1+625bbab</div></a>
+      <a href="../index.html"><div class="brand">Qiskit Bosons 0.1.0a1+1484286</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -189,7 +189,7 @@
     <img class="sidebar-logo only-dark" src="../_static/images/qiskit-dark-logo.svg" alt="Dark Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">Qiskit Bosons 0.1.0a1+625bbab</span>
+  <span class="sidebar-brand-text">Qiskit Bosons 0.1.0a1+1484286</span>
   
 </a>
 <form class="sidebar-search-container" method="get" action="../search.html" role="search">
@@ -390,8 +390,8 @@ mechanism which also acts across gate boundaries.</p>
 <p>Two gates merge only when all of the following hold:</p>
 <ul class="simple">
 <li><p>they act on the identical wires, in the identical order, with nothing else in between;</p></li>
-<li><p>their operators are of the same type and equal up to <a class="reference internal" href="#qiskit_bosons.transpiler.passes.MergeEvolutions.atol" title="qiskit_bosons.transpiler.passes.MergeEvolutions.atol"><code class="xref py py-attr docutils literal notranslate"><span class="pre">atol</span></code></a> as sums of products of
-ladder operators, which is <em>stricter</em> than <a class="reference internal" href="qiskit_bosons.operators.BosonOperator.html#qiskit_bosons.operators.BosonOperator.equiv" title="qiskit_bosons.operators.BosonOperator.equiv"><code class="xref py py-meth docutils literal notranslate"><span class="pre">BosonOperator.equiv()</span></code></a>, see the note below;</p></li>
+<li><p>their operators are of the same type and <a class="reference internal" href="qiskit_bosons.operators.BosonOperator.html#qiskit_bosons.operators.BosonOperator.equiv" title="qiskit_bosons.operators.BosonOperator.equiv"><code class="xref py py-meth docutils literal notranslate"><span class="pre">BosonOperator.equiv()</span></code></a> up to <a class="reference internal" href="#qiskit_bosons.transpiler.passes.MergeEvolutions.atol" title="qiskit_bosons.transpiler.passes.MergeEvolutions.atol"><code class="xref py py-attr docutils literal notranslate"><span class="pre">atol</span></code></a>, that
+is equal in the algebra of the bosons, see the note below;</p></li>
 <li><p>they are either both <code class="xref py py-attr docutils literal notranslate"><span class="pre">Evolution.atomic</span></code> or both not, and in the latter case they are
 decomposed by the same kind of <code class="xref py py-attr docutils literal notranslate"><span class="pre">Evolution.synthesis</span></code> with identical settings.</p></li>
 </ul>
@@ -399,12 +399,14 @@ decomposed by the same kind of <code class="xref py py-attr docutils literal not
 <a class="reference internal" href="qiskit_bosons.operators.OperatorTrait.html#qiskit_bosons.operators.OperatorTrait.groups" title="qiskit_bosons.operators.OperatorTrait.groups"><code class="xref py py-attr docutils literal notranslate"><span class="pre">groups</span></code></a>, of the first gate of the run.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Two operators that are <a class="reference internal" href="qiskit_bosons.operators.BosonOperator.html#qiskit_bosons.operators.BosonOperator.equiv" title="qiskit_bosons.operators.BosonOperator.equiv"><code class="xref py py-meth docutils literal notranslate"><span class="pre">BosonOperator.equiv()</span></code></a> are not necessarily the same operator
-once they are truncated. Normal ordering is an identity of the untruncated Fock space, and a
-truncation does not preserve it: <span class="math">\(b b^\dagger\)</span> and <span class="math">\(b^\dagger b + 1\)</span> map to
-different matrices, which differ on the highest level. Gates whose operators are only
-<code class="docutils literal notranslate"><span class="pre">equiv</span></code> are therefore <strong>not</strong> merged, because the merged gate would no longer equal the
-two it replaces.</p>
+<p>The merge is exact in the algebra of the bosons, where the circuit lives. A truncation, which
+only enters when the circuit is lowered to qubits, does not commute with normal ordering:
+<span class="math">\(b b^\dagger\)</span> and <span class="math">\(b^\dagger b + 1\)</span> are the same operator, but they map to
+matrices that differ on the highest level of the truncated mode. So when two evolutions whose
+operators only agree in normal order are merged, the lowered circuit can differ from the one
+of the unmerged gates on that level, which is an artifact of the cutoff either way. Write the
+operators in one order (for example normal order) if the lowered circuit has to be the same
+with and without this pass.</p>
 </div>
 <div class="admonition caution">
 <p class="admonition-title">Caution</p>
@@ -548,7 +550,7 @@ one are not merged. Place a barrier between two gates to keep them apart.</p>
             
             <a href="https://github.com/pradyunsg/furo">Furo</a>
             <div class="last-updated">
-              Last updated on 2026/11/05</div>
+              Last updated on 2026/11/18</div>
           </div>
           <div class="right-details">
             
@@ -589,13 +591,13 @@ one are not merged. Place a barrier between two gates to keep them apart.</p>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=d80d8028"></script>
+</div><script src="../_static/documentation_options.js?v=d346a3bf"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="../_static/copybutton.js?v=6dbb43f8"></script>
-    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../_static/design-tabs.js?v=fcb327ea"></script>
     <script src="../_static/katex.min.js?v=5cc8ed51"></script>
     <script src="../_static/auto-render.min.js?v=af98beb9"></script>
     <script src="../_static/katex_autorenderer.js?v=bebc588a"></script>

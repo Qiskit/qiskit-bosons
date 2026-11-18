@@ -27,8 +27,8 @@ mechanism which also acts across gate boundaries.
 Two gates merge only when all of the following hold:
 
 - they act on the identical wires, in the identical order, with nothing else in between;
-- their operators are of the same type and equal up to [`atol`](#qiskit_bosons.transpiler.passes.MergeEvolutions.atol) as sums of products of
-  ladder operators, which is *stricter* than [`BosonOperator.equiv()`](qiskit_bosons.operators.BosonOperator.html.md#qiskit_bosons.operators.BosonOperator.equiv), see the note below;
+- their operators are of the same type and [`BosonOperator.equiv()`](qiskit_bosons.operators.BosonOperator.html.md#qiskit_bosons.operators.BosonOperator.equiv) up to [`atol`](#qiskit_bosons.transpiler.passes.MergeEvolutions.atol), that
+  is equal in the algebra of the bosons, see the note below;
 - they are either both `Evolution.atomic` or both not, and in the latter case they are
   decomposed by the same kind of `Evolution.synthesis` with identical settings.
 
@@ -36,12 +36,14 @@ The merged gate keeps the operator, and thus the
 [`groups`](qiskit_bosons.operators.OperatorTrait.html.md#qiskit_bosons.operators.OperatorTrait.groups), of the first gate of the run.
 
 #### NOTE
-Two operators that are [`BosonOperator.equiv()`](qiskit_bosons.operators.BosonOperator.html.md#qiskit_bosons.operators.BosonOperator.equiv) are not necessarily the same operator
-once they are truncated. Normal ordering is an identity of the untruncated Fock space, and a
-truncation does not preserve it: $b b^\dagger$ and $b^\dagger b + 1$ map to
-different matrices, which differ on the highest level. Gates whose operators are only
-`equiv` are therefore **not** merged, because the merged gate would no longer equal the
-two it replaces.
+The merge is exact in the algebra of the bosons, where the circuit lives. A truncation, which
+only enters when the circuit is lowered to qubits, does not commute with normal ordering:
+$b b^\dagger$ and $b^\dagger b + 1$ are the same operator, but they map to
+matrices that differ on the highest level of the truncated mode. So when two evolutions whose
+operators only agree in normal order are merged, the lowered circuit can differ from the one
+of the unmerged gates on that level, which is an artifact of the cutoff either way. Write the
+operators in one order (for example normal order) if the lowered circuit has to be the same
+with and without this pass.
 
 #### CAUTION
 This is an early development prototype. Beware of changes to its interface without warning
