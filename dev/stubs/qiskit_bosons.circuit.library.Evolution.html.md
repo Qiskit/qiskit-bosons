@@ -62,6 +62,24 @@ The operator under which to time evolve the acted-upon bosonic modes.
 
 ### Methods
 
+#### equiv(other, atol=1e-10)
+
+Whether `other` is an evolution of the same operator for the same time, up to `atol`.
+
+The operators are compared with [`BosonOperator.equiv()`](qiskit_bosons.operators.BosonOperator.html.md#qiskit_bosons.operators.BosonOperator.equiv), and numeric times up to
+`atol` as well. Like the circuit, this is a comparison in the algebra of the bosons:
+$b b^\dagger$ and $b^\dagger b + 1$ are the same operator, although a truncation
+(which only enters when the circuit is lowered to qubits) maps them differently on the top
+level of a mode.
+
+* **Parameters:**
+  * **other** ([*object*](https://docs.python.org/3/builtins/functions.html#object)) – the operation to compare with.
+  * **atol** ([*float*](https://docs.python.org/3/builtins/functions.html#float)) – the absolute tolerance of the comparison.
+* **Returns:**
+  Whether the two evolutions are the same.
+* **Return type:**
+  [bool](https://docs.python.org/3/builtins/functions.html#bool)
+
 #### inverse(annotated=False)
 
 Returns the inverse of this gate, $e^{+i t H}$.

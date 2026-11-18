@@ -347,7 +347,10 @@ Checks this operator for equivalence with another operator.
 Equivalence in this context means approximate equality up to the specified absolute
 tolerance. To be more precise, this method returns `True`, when all the absolute values
 of the coefficients in the difference `other - self` are below the specified threshold
-`atol`.
+`atol`, once that difference is brought to normal order (see [`normal_ordered()`](#qiskit_bosons.operators.BosonOperator.normal_ordered)). So
+$b b^\dagger$ and $b^\dagger b + 1$ are equivalent: they are the same operator
+in the untruncated algebra, although a truncation maps them to matrices that differ on the
+highest retained level.
 
 #### NOTE
 This is the mathematical comparison you almost always want. It differs from the `==`
