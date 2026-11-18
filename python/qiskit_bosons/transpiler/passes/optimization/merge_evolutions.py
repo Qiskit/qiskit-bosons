@@ -45,21 +45,17 @@ def _same_synthesis(a: object, b: object) -> bool:
 
 
 def _same_operator(first: Evolution, second: Evolution, atol: float) -> bool:
-    r"""Whether two gates evolve under the same operator, before any truncation.
+    r"""Whether two gates evolve under the same operator, in the algebra of the bosons.
 
-    This is deliberately *not* :meth:`.BosonOperator.equiv`. That method compares the operators after
-    normal ordering, which is an identity of the untruncated algebra only: the truncation does not
-    commute with normal ordering, so two operators that are ``equiv`` can have different images
-    under an encoding. For example :math:`b b^\dagger` and :math:`b^\dagger b + 1` are ``equiv`` and
-    differ on the top level. Merging gates on that basis would change the circuit.
-
-    The difference of the two operators has to vanish without normal ordering instead, that is as a
-    sum of the very same products of ladder operators.
+    This is :meth:`.BosonOperator.equiv`, which compares the operators in normal order, so
+    :math:`b b^\dagger` and :math:`b^\dagger b + 1` are the same operator. The circuit lives in the
+    untruncated algebra; a truncation only enters when it is lowered to qubits (see the note of
+    :class:`MergeEvolutions`).
     """
     a, b = first.operator, second.operator
     if type(a) is not type(b):
         return False
-    return len((a - b).simplify(atol)) == 0
+    return bool(a.equiv(b, atol))
 
 
 def _mergeable(first: DAGOpNode, second: DAGOpNode, atol: float) -> bool:
@@ -102,8 +98,8 @@ class MergeEvolutions(BosonicDAGCircuitPass):
     Two gates merge only when all of the following hold:
 
     - they act on the identical wires, in the identical order, with nothing else in between;
-    - their operators are of the same type and equal up to :attr:`atol` as sums of products of
-      ladder operators, which is *stricter* than :meth:`.BosonOperator.equiv`, see the note below;
+    - their operators are of the same type and :meth:`.BosonOperator.equiv` up to :attr:`atol`, that
+      is equal in the algebra of the bosons, see the note below;
     - they are either both :attr:`.Evolution.atomic` or both not, and in the latter case they are
       decomposed by the same kind of :attr:`.Evolution.synthesis` with identical settings.
 
@@ -111,12 +107,14 @@ class MergeEvolutions(BosonicDAGCircuitPass):
     :attr:`~qiskit_bosons.operators.OperatorTrait.groups`, of the first gate of the run.
 
     .. note::
-       Two operators that are :meth:`.BosonOperator.equiv` are not necessarily the same operator
-       once they are truncated. Normal ordering is an identity of the untruncated Fock space, and a
-       truncation does not preserve it: :math:`b b^\dagger` and :math:`b^\dagger b + 1` map to
-       different matrices, which differ on the highest level. Gates whose operators are only
-       ``equiv`` are therefore **not** merged, because the merged gate would no longer equal the
-       two it replaces.
+       The merge is exact in the algebra of the bosons, where the circuit lives. A truncation, which
+       only enters when the circuit is lowered to qubits, does not commute with normal ordering:
+       :math:`b b^\dagger` and :math:`b^\dagger b + 1` are the same operator, but they map to
+       matrices that differ on the highest level of the truncated mode. So when two evolutions whose
+       operators only agree in normal order are merged, the lowered circuit can differ from the one
+       of the unmerged gates on that level, which is an artifact of the cutoff either way. Write the
+       operators in one order (for example normal order) if the lowered circuit has to be the same
+       with and without this pass.
 
     .. caution::
        This is an early development prototype. Beware of changes to its interface without warning

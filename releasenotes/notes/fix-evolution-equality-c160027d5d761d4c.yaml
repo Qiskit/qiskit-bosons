@@ -1,0 +1,18 @@
+---
+features:
+  - |
+    :class:`~qiskit_bosons.circuit.library.Evolution` has a new ``equiv`` method, which compares
+    two evolutions up to a tolerance on their times and their operators, and its instances are now
+    hashable.
+fixes:
+  - |
+    Two :class:`~qiskit_bosons.circuit.library.Evolution` gates for the same time on as many modes
+    no longer compare equal when their operators differ. The gate used Qiskit's equality of
+    instructions, which compares the parameters and the definitions but not the operator, which is
+    no parameter. It now compares its number of modes, its time and its operator, the latter with
+    :meth:`~qiskit_bosons.operators.BosonOperator.equiv`, that is in the algebra of the bosons,
+    where the circuit lives: :math:`b b^\dagger` and :math:`b^\dagger b + 1` are the same operator,
+    and the order of the terms does not matter. The truncation of a mode only enters when the
+    circuit is lowered to qubits. The :attr:`~qiskit_bosons.circuit.BosonicGate.synthesis` and
+    :attr:`~qiskit_bosons.circuit.BosonicGate.atomic` flag are not compared: they decide how the
+    gate is broken down, not what it is.
