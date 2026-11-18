@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import numbers
 from typing import TYPE_CHECKING
 
 from qiskit_bosons.operators import OperatorTrait
@@ -119,3 +120,55 @@ class Evolution(BosonicGate):
             synthesis=self.synthesis,
             atomic=self.atomic,
         )
+
+    def __eq__(self, other: object) -> bool:
+        """Whether ``other`` is an evolution of an equal operator for the same time on as many modes.
+
+        The operators are compared with :meth:`.BosonOperator.equiv` and no tolerance, that is in
+        the algebra of the bosons, where the circuit lives: a truncation only enters when the circuit
+        is lowered to qubits. The :attr:`~.BosonicGate.synthesis` and :attr:`~.BosonicGate.atomic`
+        flag are not compared: they decide how the gate is broken down, not what it is.
+        """
+        # Qiskit's `Instruction.__eq__` compares the parameters and the definitions. The operator is
+        # no parameter, so it would be ignored (an atomic gate has no definition at all), and the
+        # definitions depend on how the operator is written and on the synthesis method.
+        if not isinstance(other, Evolution):
+            return False
+        return (
+            self.num_modes == other.num_modes
+            and self.params == other.params
+            and type(self.operator) is type(other.operator)
+            and bool(self.operator.equiv(other.operator, 0.0))
+        )
+
+    def __hash__(self) -> int:
+        """Hashes the number of modes and the time, consistently with :meth:`__eq__`."""
+        return hash((type(self).__name__, self.num_modes, tuple(self.params)))
+
+    def equiv(self, other: object, atol: float = 1e-10) -> bool:
+        r"""Whether ``other`` is an evolution of the same operator for the same time, up to ``atol``.
+
+        The operators are compared with :meth:`.BosonOperator.equiv`, and numeric times up to
+        ``atol`` as well. Like the circuit, this is a comparison in the algebra of the bosons:
+        :math:`b b^\dagger` and :math:`b^\dagger b + 1` are the same operator, although a truncation
+        (which only enters when the circuit is lowered to qubits) maps them differently on the top
+        level of a mode.
+
+        Args:
+            other: the operation to compare with.
+            atol: the absolute tolerance of the comparison.
+
+        Returns:
+            Whether the two evolutions are the same.
+        """
+        if not isinstance(other, Evolution) or self.num_modes != other.num_modes:
+            return False
+        (time,), (other_time,) = self.params, other.params
+        if isinstance(time, numbers.Complex) and isinstance(other_time, numbers.Complex):
+            if abs(complex(time) - complex(other_time)) > atol:
+                return False
+        elif time != other_time:
+            return False
+        if type(self.operator) is not type(other.operator):
+            return False
+        return bool(self.operator.equiv(other.operator, atol))
