@@ -87,6 +87,7 @@ from .synthesis import (
     B2QSynthesisPluginManager,
     MapperFnEvolutionSynthesis,
     OccupationInitializeModesSynthesis,
+    expand_projectors,
     group_wise,
     simplify,
 )
@@ -104,6 +105,7 @@ __all__ = [
     "OccupationB2QLayout",
     "OccupationInitializeModesSynthesis",
     "RelabelModes",
+    "expand_projectors",
     "group_wise",
     "simplify",
 ]
