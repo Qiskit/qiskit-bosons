@@ -410,3 +410,5 @@ another, and `simplify()` can pin a canonical order instead.
 - [Group operator terms: use the operator structure](grouping.html.md#grouping-explanation) explains how to assign and check the groups that a product formula
   interleaves.
 - [Simulate Bose-Hubbard dynamics with a choice of encoding](bose_hubbard.html.md#bose-hubbard-getting-started) applies the repetition scheme to a complete example.
+- [Simulate spin chains with hard-core bosons](spin_models.html.md#spin-models-getting-started) chooses the groups and their order for Ising and Heisenberg
+  chains.

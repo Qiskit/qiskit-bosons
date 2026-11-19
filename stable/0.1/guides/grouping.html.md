@@ -183,3 +183,4 @@ visible.
 - [Design principles of operator representations](operators.html.md#operators-explanation) explains the operator data structure that carries the group
   indices, and how its terms are stored and ordered.
 - [2. Group before mapping](bose_hubbard.html.md#bose-hubbard-grouping) applies a grouping to a complete model.
+- [Simulate spin chains with hard-core bosons](spin_models.html.md#spin-models-getting-started) groups the terms of spin chains into commuting layers.

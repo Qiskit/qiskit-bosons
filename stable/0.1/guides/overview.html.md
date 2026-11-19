@@ -7,6 +7,11 @@ To get started with the breadth of features this package supports, check out thi
 
 - [Simulate Bose-Hubbard dynamics with a choice of encoding](bose_hubbard.html.md#bose-hubbard-getting-started)
 
+To see how the same workflow gives you control over the Trotter error of spin chains, which are
+native to qubits, read this end-to-end guide:
+
+- [Simulate spin chains with hard-core bosons](spin_models.html.md#spin-models-getting-started)
+
 The following sections outline additional guides that dive into more specific topics in detail.
 
 ## Operators and their structure

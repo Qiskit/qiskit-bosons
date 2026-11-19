@@ -9,6 +9,7 @@
 
 - [Overview](overview.html.md): Overview of the Qiskit Bosons guides, grouped by topic, with links to each one.
 - [Simulate Bose-Hubbard dynamics with a choice of encoding](bose_hubbard.html.md): End-to-end tutorial for the time dynamics of the one-dimensional Bose-Hubbard model: build the circuit on bosonic modes, defer the truncation and the boson-to-qubit encoding to transpile time, and check the evolved site densities against an exact reference.
+- [Simulate spin chains with hard-core bosons](spin_models.html.md): End-to-end guide for the time dynamics of Ising and Heisenberg-like spin chains: write the generic XYZ Hamiltonian with hard-core bosons, isolate the transverse-field Ising and XXZ special cases, and take control of the term order of the Trotter product formula through group indices.
 - [More guides](index.html.md): Table of contents of all Qiskit Bosons guides.
 - [Design principles of operator representations](operators.html.md): Design principles of the BosonOperator in qiskit_bosons.operators: exact sums of ladder-operator products with no occupation cutoff, how to build, inspect, and combine operators, and how to compare two of them.
 - [Group operator terms: use the operator structure](grouping.html.md): How to assign group indices to the terms of a BosonOperator, check that each group is Hermitian or has uniform coefficients, and lay out the operator so that picking a few groups stays cheap.

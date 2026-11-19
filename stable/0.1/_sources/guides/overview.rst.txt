@@ -17,6 +17,11 @@ To get started with the breadth of features this package supports, check out thi
 
 - :ref:`bose_hubbard_getting_started`
 
+To see how the same workflow gives you control over the Trotter error of spin chains, which are
+native to qubits, read this end-to-end guide:
+
+- :ref:`spin_models_getting_started`
+
 The following sections outline additional guides that dive into more specific topics in detail.
 
 
