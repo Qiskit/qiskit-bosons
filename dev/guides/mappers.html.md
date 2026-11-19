@@ -525,6 +525,18 @@ and [`group_wise()`](../stubs/qiskit_bosons.transpiler.passes.synthesis.group_wi
 `group_wise` maps one group of the operator at a time so that the terms of a group stay adjacent.
 Do not combine the two, because sorting discards the grouping. The [grouping guide](grouping.html.md#grouping-explanation) shows how to assign groups, and the [synthesis guide](bosonic_synthesis.html.md#bosonic-synthesis-explanation) shows how the order affects the circuit.
 
+A third helper,
+[`expand_projectors()`](../stubs/qiskit_bosons.transpiler.passes.synthesis.expand_projectors.html.md#qiskit_bosons.transpiler.passes.synthesis.expand_projectors), addresses a different
+problem. The occupation encodings write a number operator as a projector, and
+[`PauliEvolutionGate`](https://quantum.cloud.ibm.com/docs/api/qiskit/qiskit.circuit.library.PauliEvolutionGate) expands it into Paulis only while it synthesizes
+the gate, one term at a time. The pieces that cancel in the sum are then rotated separately, between
+terms that do not commute with them, and a group that is meant to evolve as a whole does not. The
+helper expands the projectors up front and merges the Pauli strings, each taking the place of its
+first occurrence, so it keeps the order that the mapper or `group_wise` chose. Wrap it inside
+`group_wise`, as in `group_wise(expand_projectors(mapper_fn))`. The other order merges terms
+across the groups. The expansion grows exponentially with the number of qubits that a diagonal term
+acts on, so use it with care under a unary encoding.
+
 ## Next steps
 
 - Follow [Simulate Bose-Hubbard dynamics with a choice of encoding](bose_hubbard.html.md#bose-hubbard-getting-started) for a full simulation that sweeps the cutoff and

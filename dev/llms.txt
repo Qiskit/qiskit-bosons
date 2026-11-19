@@ -85,6 +85,7 @@
 - [B2QSynthesisPluginManager](stubs/qiskit_bosons.transpiler.passes.synthesis.B2QSynthesisPluginManager.html.md): A simple manager of the installed boson-to-qubit synthesis plugins.
 - [MapperFnEvolutionSynthesis](stubs/qiskit_bosons.transpiler.passes.synthesis.MapperFnEvolutionSynthesis.html.md): A &#96;B2QSynthesisPlugin&#96; for transpiling &#96;Evolution&#96; under a custom mapping.
 - [OccupationInitializeModesSynthesis](stubs/qiskit_bosons.transpiler.passes.synthesis.OccupationInitializeModesSynthesis.html.md): A &#96;B2QSynthesisPlugin&#96; for transpiling &#96;InitializeModes&#96;.
+- [expand_projectors](stubs/qiskit_bosons.transpiler.passes.synthesis.expand_projectors.html.md): Wraps a mapper function so that it expands the projectors of its result into Paulis.
 - [group_wise](stubs/qiskit_bosons.transpiler.passes.synthesis.group_wise.html.md): Wraps a mapper function so that it maps an operator one group at a time.
 - [simplify](stubs/qiskit_bosons.transpiler.passes.synthesis.simplify.html.md): Wraps a mapper function so that it simplifies the operator it returns.
 - [Transpiler Pass Utilities](pydoc/qiskit_bosons.transpiler.passes.utils.html.md): Convenience functions for implementing custom transpiler passes.
