@@ -88,12 +88,19 @@ choose that order:
 .. autosummary::
    :toctree: ../stubs/
 
+   expand_projectors
    group_wise
    simplify
 """
 
 from .b2q_synthesis import B2QSynthesis, B2QSynthesisConfig
-from .evolution import MapperFnEvolutionSynthesis, MapperFunction, group_wise, simplify
+from .evolution import (
+    MapperFnEvolutionSynthesis,
+    MapperFunction,
+    expand_projectors,
+    group_wise,
+    simplify,
+)
 from .initialize_modes import OccupationInitializeModesSynthesis
 from .plugin import B2QSynthesisPlugin, B2QSynthesisPluginManager
 
@@ -105,6 +112,7 @@ __all__ = [
     "MapperFnEvolutionSynthesis",
     "MapperFunction",
     "OccupationInitializeModesSynthesis",
+    "expand_projectors",
     "group_wise",
     "simplify",
 ]
