@@ -220,3 +220,4 @@ visible.
 - :ref:`operators_explanation` explains the operator data structure that carries the group
   indices, and how its terms are stored and ordered.
 - :ref:`bose_hubbard_grouping` applies a grouping to a complete model.
+- :ref:`spin_models_getting_started` groups the terms of spin chains into commuting layers.
