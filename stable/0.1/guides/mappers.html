@@ -11,7 +11,7 @@
         <link rel="prefetch" href="../_static/images/qiskit-dark-logo.svg" as="image">
 
     <!-- Generated with Sphinx 9.0.4 and Furo 2025.12.19 -->
-        <title>Map operator representations - Qiskit Bosons 0.1.0a1+1484286</title>
+        <title>Map operator representations - Qiskit Bosons 0.1.0a1+041da35</title>
       <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/qiskit-sphinx-theme.css?v=fc6d6d93" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">Qiskit Bosons 0.1.0a1+1484286</div></a>
+      <a href="../index.html"><div class="brand">Qiskit Bosons 0.1.0a1+041da35</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -190,7 +190,7 @@
     <img class="sidebar-logo only-dark" src="../_static/images/qiskit-dark-logo.svg" alt="Dark Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">Qiskit Bosons 0.1.0a1+1484286</span>
+  <span class="sidebar-brand-text">Qiskit Bosons 0.1.0a1+041da35</span>
   
 </a>
 <form class="sidebar-search-container" method="get" action="../search.html" role="search">
@@ -306,6 +306,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../stubs/qiskit_bosons.transpiler.passes.synthesis.B2QSynthesisPluginManager.html">B2QSynthesisPluginManager</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../stubs/qiskit_bosons.transpiler.passes.synthesis.MapperFnEvolutionSynthesis.html">MapperFnEvolutionSynthesis</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../stubs/qiskit_bosons.transpiler.passes.synthesis.OccupationInitializeModesSynthesis.html">OccupationInitializeModesSynthesis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../stubs/qiskit_bosons.transpiler.passes.synthesis.expand_projectors.html">expand_projectors</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../stubs/qiskit_bosons.transpiler.passes.synthesis.group_wise.html">group_wise</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../stubs/qiskit_bosons.transpiler.passes.synthesis.simplify.html">simplify</a></li>
 </ul>
@@ -832,6 +833,17 @@ and <a class="reference internal" href="../stubs/qiskit_bosons.transpiler.passes
 <code class="docutils literal notranslate"><span class="pre">simplify</span></code> merges duplicate strings and sorts the terms into a canonical order, whereas
 <code class="docutils literal notranslate"><span class="pre">group_wise</span></code> maps one group of the operator at a time so that the terms of a group stay adjacent.
 Do not combine the two, because sorting discards the grouping. The <a class="reference internal" href="grouping.html#grouping-explanation"><span class="std std-ref">grouping guide</span></a> shows how to assign groups, and the <a class="reference internal" href="bosonic_synthesis.html#bosonic-synthesis-explanation"><span class="std std-ref">synthesis guide</span></a> shows how the order affects the circuit.</p>
+<p>A third helper,
+<a class="reference internal" href="../stubs/qiskit_bosons.transpiler.passes.synthesis.expand_projectors.html#qiskit_bosons.transpiler.passes.synthesis.expand_projectors" title="qiskit_bosons.transpiler.passes.synthesis.expand_projectors"><code class="xref py py-func docutils literal notranslate"><span class="pre">expand_projectors()</span></code></a>, addresses a different
+problem. The occupation encodings write a number operator as a projector, and
+<a class="reference external" href="https://quantum.cloud.ibm.com/docs/api/qiskit/qiskit.circuit.library.PauliEvolutionGate" title="(in Qiskit v2.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">PauliEvolutionGate</span></code></a> expands it into Paulis only while it synthesizes
+the gate, one term at a time. The pieces that cancel in the sum are then rotated separately, between
+terms that do not commute with them, and a group that is meant to evolve as a whole does not. The
+helper expands the projectors up front and merges the Pauli strings, each taking the place of its
+first occurrence, so it keeps the order that the mapper or <code class="docutils literal notranslate"><span class="pre">group_wise</span></code> chose. Wrap it inside
+<code class="docutils literal notranslate"><span class="pre">group_wise</span></code>, as in <code class="docutils literal notranslate"><span class="pre">group_wise(expand_projectors(mapper_fn))</span></code>. The other order merges terms
+across the groups. The expansion grows exponentially with the number of qubits that a diagonal term
+acts on, so use it with care under a unary encoding.</p>
 </section>
 <section id="next-steps">
 <h2>Next steps<a class="headerlink" href="#next-steps" title="Link to this heading">¶</a></h2>
@@ -901,7 +913,7 @@ photonic, vibrational, and spin-s Hamiltonians, npj Quantum Information 6, 49 (2
             
             <a href="https://github.com/pradyunsg/furo">Furo</a>
             <div class="last-updated">
-              Last updated on 2026/11/18</div>
+              Last updated on 2026/11/19</div>
           </div>
           <div class="right-details">
             
@@ -943,7 +955,7 @@ photonic, vibrational, and spin-s Hamiltonians, npj Quantum Information 6, 49 (2
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=d346a3bf"></script>
+</div><script src="../_static/documentation_options.js?v=d465718e"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

@@ -1,0 +1,6 @@
+﻿expand\_projectors
+==================
+
+.. currentmodule:: qiskit_bosons.transpiler.passes.synthesis
+
+.. autofunction:: expand_projectors

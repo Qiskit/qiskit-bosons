@@ -10,6 +10,26 @@
 
 ### New Features
 
+- Added `expand_projectors()`, a mapper function adapter next
+  to `simplify()` and
+  `group_wise()`. It expands the projectors of a mapped
+  operator into Pauli terms and merges the ones that coincide, keeping the order in which the
+  terms first appear.
+
+  This matters for groups that combine terms which do not commute with the projectors they
+  contain, for instance the hopping and density terms of a spin-1/2 chain written with hard-core
+  bosons. [`PauliEvolutionGate`](https://quantum.cloud.ibm.com/docs/api/qiskit/qiskit.circuit.library.PauliEvolutionGate) expands a projector only while
+  synthesizing the gate, and does so term by term, so the pieces that cancel are rotated one by one
+  between the terms they do not commute with. A group that is exactly solvable as a sum of
+  commuting Paulis then no longer produces its exact evolution, and `simplify` cannot help
+  because it merges before the expansion. Wrap the mapper inside `group_wise`:
+  ```default
+  MapperFnEvolutionSynthesis(group_wise(expand_projectors(mapper_fn)))
+  ```
+
+  The expansion is exponential in the number of qubits that a diagonal term acts on, so it is
+  meant for the compact encodings or a small cutoff.
+
 - [`Evolution`](stubs/qiskit_bosons.circuit.library.Evolution.html.md#qiskit_bosons.circuit.library.Evolution) has a new `equiv` method, which compares
   two evolutions up to a tolerance on their times and their operators, and its instances are now
   hashable.
