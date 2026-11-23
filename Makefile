@@ -55,10 +55,10 @@ rustcoverage: testrust
 # `make pystubs` a complete regenerate-from-scratch that cannot leave orphans behind.
 .PHONY: pystubs pystubs-dev pystubs-clean
 pystubs: pystubs-clean
-	cargo run --release --bin stub_gen -p qiskit-bosons-pyext --no-default-features
+	cargo run --release --bin stub_gen -p qiskit-bosons-pyext
 
 pystubs-dev: pystubs-clean
-	cargo run --bin stub_gen -p qiskit-bosons-pyext --no-default-features
+	cargo run --bin stub_gen -p qiskit-bosons-pyext
 
 pystubs-clean:
 	find python/ -name '*.pyi' -delete
@@ -76,12 +76,28 @@ pystubs-check: pystubs
 # `pyext` and `pyext-dev` are conflicting rules - they both attempt to "install"
 # the compiled Rust acceleration library, but they differ between release and
 # dev mode.
-.PHONY: pyext pyext-dev
-pyext: pystubs
-	python setup.py build_rust --inplace --release
+#
+# `maturin develop --skip-install` rebuilds only the extension module and places
+# it in the source tree, leaving the rest of the (editable) installation alone.
+# It requires an active virtual environment.  Both rules first delete the
+# leftovers of earlier builds that would silently take precedence over the new
+# one:
+#
+# - a previously built extension, because Python prefers a version-specific
+#   suffix such as `.cpython-313-x86_64-linux-gnu.so` over `.abi3.so`;
+# - the `qiskit_bosons.egg-info` that `setuptools` used to write into the
+#   source tree, because an editable install puts `python/` on `sys.path`, where
+#   its stale entry points shadow those of the installed package.
+.PHONY: pyext pyext-dev pyext-clean
+pyext: pystubs pyext-clean
+	maturin develop --skip-install --release
 
-pyext-dev: pystubs-dev
-	python setup.py build_rust --inplace
+pyext-dev: pystubs-dev pyext-clean
+	maturin develop --skip-install
+
+pyext-clean:
+	find python/qiskit_bosons -maxdepth 1 -name '_lib.*' \( -name '*.so' -o -name '*.pyd' \) -delete
+	rm -rf python/qiskit_bosons.egg-info
 
 # ==============================================================================
 # Recipes for Python Testing

@@ -77,7 +77,7 @@ jobs:
       - name: Install Python package
         shell: bash
         run: |
-          SETUPTOOLS_RUST_CARGO_PROFILE=release pip install -e .
+          MATURIN_PEP517_ARGS="--profile release" pip install -e .
 
       - name: Rust tests
         shell: bash
@@ -96,7 +96,7 @@ jobs:
       - name: Optional tests
         shell: bash
         run: |
-          SETUPTOOLS_RUST_CARGO_PROFILE=release pip install -e ".[all]"
+          MATURIN_PEP517_ARGS="--profile release" pip install -e ".[all]"
           make testoptional
 
       # The guides under `docs/` are documentation: their doctests are only meaningful when the
