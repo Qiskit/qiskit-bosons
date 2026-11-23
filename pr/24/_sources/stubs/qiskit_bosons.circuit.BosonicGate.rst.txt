@@ -1,0 +1,200 @@
+﻿BosonicGate
+===========
+
+.. currentmodule:: qiskit_bosons.circuit
+
+.. autoclass:: BosonicGate
+   :show-inheritance:
+   :no-members:
+   :no-inherited-members:
+   :special-members:
+
+
+  
+  
+   .. rubric:: Attributes
+    
+   .. autoattribute:: atomic
+   .. autoattribute:: num_modes
+   .. autoattribute:: synthesis
+  
+  
+  
+   .. rubric:: Inherited Attributes
+    
+   .. autoattribute:: base_class
+   .. autoattribute:: decompositions
+   .. autoattribute:: definition
+   .. autoattribute:: label
+   .. autoattribute:: mutable
+   .. autoattribute:: name
+   .. autoattribute:: num_clbits
+   .. autoattribute:: num_qubits
+   .. autoattribute:: params
+  
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+  
+  
+   .. rubric:: Methods
+    
+   .. automethod:: with_synthesis
+  
+  
+  
+  
+  
+   .. rubric:: Inherited Methods
+    
+   .. automethod:: add_decomposition
+   .. automethod:: broadcast_arguments
+   .. automethod:: control
+   .. automethod:: copy
+   .. automethod:: inverse
+   .. automethod:: is_parameterized
+   .. automethod:: power
+   .. automethod:: repeat
+   .. automethod:: reverse_ops
+   .. automethod:: soft_compare
+   .. automethod:: to_matrix
+   .. automethod:: to_mutable
+   .. automethod:: validate_parameter
+  
+  
+  

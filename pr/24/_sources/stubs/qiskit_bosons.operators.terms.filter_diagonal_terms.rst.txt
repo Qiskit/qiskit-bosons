@@ -1,0 +1,6 @@
+﻿filter\_diagonal\_terms
+=======================
+
+.. currentmodule:: qiskit_bosons.operators.terms
+
+.. autofunction:: filter_diagonal_terms

@@ -1,0 +1,6 @@
+﻿double\_commutator
+==================
+
+.. currentmodule:: qiskit_bosons.operators.library
+
+.. autofunction:: double_commutator

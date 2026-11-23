@@ -1,0 +1,107 @@
+﻿LevelEncoding
+=============
+
+.. currentmodule:: qiskit_bosons.mappers
+
+.. autoclass:: LevelEncoding
+   :show-inheritance:
+   :no-members:
+   :no-inherited-members:
+   :special-members:
+
+
+  
+  
+   .. rubric:: Attributes
+    
+   .. autoattribute:: GRAY
+   .. autoattribute:: STANDARD_BINARY
+   .. autoattribute:: UNARY_PROJECTED
+   .. autoattribute:: UNARY_UNPROJECTED
+  
+  
+  
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+  
+  
+   .. rubric:: Methods
+    
+   .. automethod:: from_name
+   .. automethod:: level_to_bits
+   .. automethod:: num_qubits
+  
+  
+  
+  
+  
+  
+  

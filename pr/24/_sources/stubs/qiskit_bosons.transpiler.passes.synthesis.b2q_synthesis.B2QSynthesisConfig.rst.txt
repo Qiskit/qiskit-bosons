@@ -1,0 +1,6 @@
+﻿B2QSynthesisConfig
+==================
+
+.. currentmodule:: qiskit_bosons.transpiler.passes.synthesis.b2q_synthesis
+
+.. autodata:: B2QSynthesisConfig

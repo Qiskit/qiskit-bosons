@@ -1,0 +1,6 @@
+﻿B2QLayout
+=========
+
+.. currentmodule:: qiskit_bosons.transpiler
+
+.. autodata:: B2QLayout

@@ -1,0 +1,29 @@
+# Qiskit Bosons
+
+> Qiskit Bosons extends Qiskit with tools for working with bosonic systems: a bosonic operator data structure, a framework and library for encoding bosonic operators as qubit operators, and a framework and library for synthesizing bosonic quantum circuits, integrated into Qiskit's transpiler pipeline. The core is written in Rust and exposed through a first-party Python API.
+
+
+2026, Qiskit addons team
+
+## Pages in this subsection
+
+- [&#96;qiskit-bosons&#96; Python API reference](index.html.md): Reference for the Python API of qiskit-bosons, covering operators, mappers, circuits, the transpiler, linear algebra, protocols, and utilities.
+- [Operator Representations](qiskit_bosons.operators.html.md): The BosonOperator, an exact sum of products of bosonic creation and annihilation operators with no occupation cutoff, and the cre and ann helpers that build its terms.
+- [Operator Library](qiskit_bosons.operators.library.html.md): Library of helpers for building bosonic operators, such as the commutator, anti-commutator, and double commutator, and the position and momentum quadratures.
+- [Operator Terms](qiskit_bosons.operators.terms.html.md): Routines that operate on the individual terms of an operator, to analyze a grouping, filter diagonal terms, and order them canonically.
+- [Representation Mappers](qiskit_bosons.mappers.html.md): Framework for implementing custom boson-to-qubit mappers, plus the LevelEncoding and LevelSpec classes that describe the truncation of each mode and how its levels are laid out on qubits.
+- [Mapper Library](qiskit_bosons.mappers.library.html.md): Library of boson-to-qubit mappers, namely the occupation encoding, which truncates each mode of a BosonOperator and lays its levels out on qubits.
+- [Circuit Representation](qiskit_bosons.circuit.html.md): The BosonicCircuit and BosonicGate classes for expressing circuits on bosonic modes instead of qubits, plus type aliases that document this re-interpretation of Qiskit's circuit types.
+- [Circuit Library](qiskit_bosons.circuit.library.html.md): Library of bosonic gates, such as time evolution, mode initialization, and passive mode rotations.
+- [Circuit Library Synthesis (&#96;B2B&#96;)](qiskit_bosons.circuit.library.synthesis.html.md): Boson-to-boson synthesis methods that break a gate down into smaller bosonic gates, such as Trotter and qDRIFT formulas for an Evolution gate and the Clements decomposition of a ModeRotation gate, plus the B2BSynthesisPlugin interface for custom methods, which the B2BSynthesis transpiler pass applies.
+- [Transpiler](qiskit_bosons.transpiler.html.md): How Qiskit Bosons transpiles a BosonicCircuit to a QuantumCircuit: the transpilation stages, the pass manager, and the layout of bosonic modes onto qubits.
+- [Transpiler Passes](qiskit_bosons.transpiler.passes.html.md): Transpiler passes for each stage of the bosonic pipeline: optimization of bosonic circuits, layout of bosonic modes onto qubits, and boson-to-qubit synthesis.
+- [Transpiler Pass Synthesis (&#96;B2Q&#96;)](qiskit_bosons.transpiler.passes.synthesis.html.md): Boson-to-qubit synthesis plugins that the B2QSynthesis transpiler pass applies, such as the mapper-based Evolution synthesis, plus the B2QSynthesisPlugin interface for custom plugins.
+- [Transpiler Pass Utilities](qiskit_bosons.transpiler.passes.utils.html.md): Convenience functions for implementing custom transpiler passes.
+- [Transpiler Presets](qiskit_bosons.transpiler.presets.html.md): Preset pass managers that transpile a BosonicCircuit to a QuantumCircuit with the occupation encoding.
+- [Linear Algebra Utilities](qiskit_bosons.linalg.html.md): Linear algebra utilities, such as the Givens decomposition of a unitary matrix.
+- [Protocols](qiskit_bosons.protocols.html.md): Protocols that a class can satisfy structurally to be usable throughout the package, such as SupportsCommutators.
+
+## Optional
+
+- [Top-level llms.txt](../llms.txt): Complete documentation index.

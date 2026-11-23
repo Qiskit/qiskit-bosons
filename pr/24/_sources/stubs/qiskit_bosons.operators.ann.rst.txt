@@ -1,0 +1,6 @@
+﻿ann
+===
+
+.. currentmodule:: qiskit_bosons.operators
+
+.. autofunction:: ann

@@ -1,0 +1,6 @@
+﻿B2BSynthesisConfig
+==================
+
+.. currentmodule:: qiskit_bosons.transpiler.passes.optimization.b2b_synthesis
+
+.. autodata:: B2BSynthesisConfig
