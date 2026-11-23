@@ -67,7 +67,9 @@ python -m pytest -s -p no:doctest tests/python/operators/test_boson_operator.py:
 ```
 (`-p no:doctest` because doctests are collected separately via Sybil — see below.)
 
-Editable install: `SETUPTOOLS_RUST_CARGO_PROFILE=release pip install -e .` (the `all` extra exists but is an empty placeholder, and CI installs `.[all]`; there are no real optional-dependency extras yet).
+Editable install: `MATURIN_PEP517_ARGS="--profile release" pip install -e .` (the build backend is plain `maturin`, configured in `[tool.maturin]` of `pyproject.toml`; without the override, editable installs compile in debug mode). The `all` extra exists but is an empty placeholder, and CI installs `.[all]`; there are no real optional-dependency extras yet.
+
+> **Stale extension modules shadow fresh ones.** Python prefers a version-specific suffix (`_lib.cpython-313-x86_64-linux-gnu.so`) over `_lib.abi3.so`, which is what `maturin` builds. `make pyext`/`make pyext-dev` delete every `python/qiskit_bosons/_lib.*.so` (and the stale setuptools-era `python/qiskit_bosons.egg-info`, whose entry points would shadow the installed ones) before building (`make pyext-clean`), but an editable reinstall does not, so a leftover from an older build keeps getting imported. Check `qiskit_bosons._lib.__file__` when a Rust change seems to have no effect.
 
 ### Important build coupling
 
@@ -119,7 +121,7 @@ One thing to know first:
 
 ## Versioning
 
-`VERSION.txt` (committed) is the source of truth for Python; `make version-bump VERSION=...` syncs it with the Rust `Cargo.toml` workspace version and refreshes `Cargo.lock` via `tools/set_version.py`. `version.py` appends a git sha for dev builds and is excluded from coverage. Use PEP 440 forms (`0.2.0.dev0`, `1.0.0rc1`, `1.0.0`).
+The version lives in three committed places that must agree: `VERSION.txt` (read at import time by `version.py`), the static `[project]` version in `pyproject.toml` (the package metadata `maturin` builds from) and the Rust `Cargo.toml` workspace version. `make version-bump VERSION=...` writes all three and refreshes `Cargo.lock` via `tools/set_version.py`; never edit one by hand. `version.py` appends a git sha to `__version__` for dev builds (the package metadata never carries it) and is excluded from coverage. Use PEP 440 forms (`0.2.0.dev0`, `1.0.0rc1`, `1.0.0`).
 
 **Release status:** the package is in alpha (`0.1.0a1`). Release notes are tracked with `reno`: user-facing changes need an entry. Breaking changes are still possible during the alpha, but should be called out in an `upgrade` note.
 
