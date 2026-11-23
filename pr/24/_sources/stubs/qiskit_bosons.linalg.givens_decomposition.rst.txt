@@ -1,6 +1,0 @@
-﻿givens\_decomposition
-=====================
-
-.. currentmodule:: qiskit_bosons.linalg
-
-.. autofunction:: givens_decomposition

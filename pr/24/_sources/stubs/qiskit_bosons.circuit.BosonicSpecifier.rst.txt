@@ -1,6 +1,0 @@
-﻿BosonicSpecifier
-================
-
-.. currentmodule:: qiskit_bosons.circuit
-
-.. autodata:: BosonicSpecifier

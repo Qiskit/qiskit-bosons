@@ -1,6 +1,0 @@
-﻿generate\_preset\_occupation\_pass\_manager
-===========================================
-
-.. currentmodule:: qiskit_bosons.transpiler.presets
-
-.. autofunction:: generate_preset_occupation_pass_manager

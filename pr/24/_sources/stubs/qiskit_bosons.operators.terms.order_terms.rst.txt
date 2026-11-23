@@ -1,6 +1,0 @@
-﻿order\_terms
-============
-
-.. currentmodule:: qiskit_bosons.operators.terms
-
-.. autofunction:: order_terms
