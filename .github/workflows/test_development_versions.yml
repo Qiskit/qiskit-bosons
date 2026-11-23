@@ -154,7 +154,7 @@ jobs:
           # the already-installed dev version.
           pip install "qiskit @ file:$(echo build/qiskit/dist/*.whl)"
           uv pip install --system --exclude <(echo qiskit) --group build --group test
-          SETUPTOOLS_RUST_CARGO_PROFILE=release uv pip install --system --exclude <(echo qiskit) -e .
+          MATURIN_PEP517_ARGS="--profile release" uv pip install --system --exclude <(echo qiskit) -e .
 
       # `testrust` exercises `core` under the `pyext` FFI backend, which needs the installed
       # extension's interpreter, so it runs after the package install.
@@ -172,7 +172,7 @@ jobs:
       - name: Optional tests
         shell: bash
         run: |
-          SETUPTOOLS_RUST_CARGO_PROFILE=release uv pip install --system --exclude <(echo qiskit) -e ".[all]"
+          MATURIN_PEP517_ARGS="--profile release" uv pip install --system --exclude <(echo qiskit) -e ".[all]"
           make testoptional
 
       - name: Documentation tests
