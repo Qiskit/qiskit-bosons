@@ -6,9 +6,9 @@
 
 ## Upcoming release (`main`)
 
-<a id="release-notes-upcoming-release-main-new-features"></a>
+<a id="release-notes-upcoming-release-main-python-api-features"></a>
 
-### New Features
+### Python API Features
 
 - Added `expand_projectors()`, a mapper function adapter next
   to `simplify()` and
@@ -34,9 +34,9 @@
   two evolutions up to a tolerance on their times and their operators, and its instances are now
   hashable.
 
-<a id="release-notes-upcoming-release-main-upgrade-notes"></a>
+<a id="release-notes-upcoming-release-main-python-api-upgrade-notes"></a>
 
-### Upgrade Notes
+### Python API Upgrade Notes
 
 - [`MergeEvolutions`](stubs/qiskit_bosons.transpiler.passes.MergeEvolutions.html.md#qiskit_bosons.transpiler.passes.MergeEvolutions) now merges two neighboring
   [`Evolution`](stubs/qiskit_bosons.circuit.library.Evolution.html.md#qiskit_bosons.circuit.library.Evolution) gates whose operators are
@@ -48,6 +48,29 @@
   unmerged gates on the highest level of a mode, which is an artifact of the cutoff either way.
   To keep the lowered circuit the same with and without the pass, write the operators of
   evolutions on the same modes in one order, for example in normal order.
+
+<a id="release-notes-upcoming-release-main-build-system-changes"></a>
+
+### Build System Changes
+
+- The Python build backend is now [maturin](https://www.maturin.rs/) instead of
+  `setuptools` with `setuptools-rust`, and `setup.py` no longer exists. Installing with
+  `pip install .` or `pip install -e .` works as before, but when building from source:
+  * The `SETUPTOOLS_RUST_CARGO_PROFILE` and `RUST_DEBUG` environment variables no longer have
+    any effect. Editable installs still compile in debug mode by default; to compile them in
+    release mode, pass the profile to `maturin` instead:
+    ```sh
+    MATURIN_PEP517_ARGS="--profile release" pip install -e .
+    ```
+  * To rebuild only the Rust extension module of an editable install, replace
+    `python setup.py build_rust --inplace [--release]` with
+    `maturin develop --skip-install [--release]`, or run `make pyext-dev` (debug mode) or
+    `make pyext` (release mode).
+  * In an existing source checkout, delete two leftovers of the old build backend, or they keep
+    shadowing every new build: the extension module (for example,
+    `python/qiskit_bosons/_lib.cpython-313-x86_64-linux-gnu.so`, which Python imports before
+    the new `_lib.abi3.so`) and the `python/qiskit_bosons.egg-info` directory (whose entry
+    points go stale). `make pyext` and `make pyext-dev` delete both for you.
 
 <a id="release-notes-upcoming-release-main-bug-fixes"></a>
 
@@ -63,6 +86,14 @@
   circuit is lowered to qubits. The [`synthesis`](stubs/qiskit_bosons.circuit.BosonicGate.html.md#qiskit_bosons.circuit.BosonicGate.synthesis) and
   [`atomic`](stubs/qiskit_bosons.circuit.BosonicGate.html.md#qiskit_bosons.circuit.BosonicGate.atomic) flag are not compared: they decide how the
   gate is broken down, not what it is.
+
+<a id="release-notes-upcoming-release-main-other-notes"></a>
+
+### Other Notes
+
+- The source distribution (sdist) now contains the Rust sources (`Cargo.toml`, `Cargo.lock`
+  and the `crates/` directory), so `pip install` can build `qiskit-bosons` from it.
+  Previous source distributions lacked them and could not be built.
 
 <a id="release-notes-0-1-0a1"></a>
 

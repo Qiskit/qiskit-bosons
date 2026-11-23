@@ -11,7 +11,7 @@
         <link rel="prefetch" href="_static/images/qiskit-dark-logo.svg" as="image">
 
     <!-- Generated with Sphinx 9.0.4 and Furo 2025.12.19 -->
-        <title>Release Notes - Qiskit Bosons 0.2.0.dev0+e9b18e3</title>
+        <title>Release Notes - Qiskit Bosons 0.2.0.dev0</title>
       <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/qiskit-sphinx-theme.css?v=fc6d6d93" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">Qiskit Bosons 0.2.0.dev0+e9b18e3</div></a>
+      <a href="index.html"><div class="brand">Qiskit Bosons 0.2.0.dev0</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -190,7 +190,7 @@
     <img class="sidebar-logo only-dark" src="_static/images/qiskit-dark-logo.svg" alt="Dark Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">Qiskit Bosons 0.2.0.dev0+e9b18e3</span>
+  <span class="sidebar-brand-text">Qiskit Bosons 0.2.0.dev0</span>
   
 </a>
 <form class="sidebar-search-container" method="get" action="search.html" role="search">
@@ -372,8 +372,8 @@
 <span id="id1"></span><h1>Release Notes<a class="headerlink" href="#release-notes" title="Link to this heading">¶</a></h1>
 <section id="upcoming-release-main">
 <span id="release-notes-upcoming-release-main"></span><h2>Upcoming release (<code class="docutils literal notranslate"><span class="pre">main</span></code>)<a class="headerlink" href="#upcoming-release-main" title="Link to this heading">¶</a></h2>
-<section id="new-features">
-<span id="release-notes-upcoming-release-main-new-features"></span><h3>New Features<a class="headerlink" href="#new-features" title="Link to this heading">¶</a></h3>
+<section id="python-api-features">
+<span id="release-notes-upcoming-release-main-python-api-features"></span><h3>Python API Features<a class="headerlink" href="#python-api-features" title="Link to this heading">¶</a></h3>
 <ul>
 <li><p>Added <code class="xref py py-func docutils literal notranslate"><span class="pre">expand_projectors()</span></code>, a mapper function adapter next
 to <code class="xref py py-func docutils literal notranslate"><span class="pre">simplify()</span></code> and
@@ -400,8 +400,8 @@ two evolutions up to a tolerance on their times and their operators, and its ins
 hashable.</p></li>
 </ul>
 </section>
-<section id="upgrade-notes">
-<span id="release-notes-upcoming-release-main-upgrade-notes"></span><h3>Upgrade Notes<a class="headerlink" href="#upgrade-notes" title="Link to this heading">¶</a></h3>
+<section id="python-api-upgrade-notes">
+<span id="release-notes-upcoming-release-main-python-api-upgrade-notes"></span><h3>Python API Upgrade Notes<a class="headerlink" href="#python-api-upgrade-notes" title="Link to this heading">¶</a></h3>
 <ul class="simple">
 <li><p><a class="reference internal" href="stubs/qiskit_bosons.transpiler.passes.MergeEvolutions.html#qiskit_bosons.transpiler.passes.MergeEvolutions" title="qiskit_bosons.transpiler.passes.MergeEvolutions"><code class="xref py py-class docutils literal notranslate"><span class="pre">MergeEvolutions</span></code></a> now merges two neighboring
 <a class="reference internal" href="stubs/qiskit_bosons.circuit.library.Evolution.html#qiskit_bosons.circuit.library.Evolution" title="qiskit_bosons.circuit.library.Evolution"><code class="xref py py-class docutils literal notranslate"><span class="pre">Evolution</span></code></a> gates whose operators are
@@ -413,6 +413,33 @@ with normal ordering, so the lowered circuit of such a merge can differ from the
 unmerged gates on the highest level of a mode, which is an artifact of the cutoff either way.
 To keep the lowered circuit the same with and without the pass, write the operators of
 evolutions on the same modes in one order, for example in normal order.</p></li>
+</ul>
+</section>
+<section id="build-system-changes">
+<span id="release-notes-upcoming-release-main-build-system-changes"></span><h3>Build System Changes<a class="headerlink" href="#build-system-changes" title="Link to this heading">¶</a></h3>
+<ul>
+<li><p>The Python build backend is now <a class="reference external" href="https://www.maturin.rs/">maturin</a> instead of
+<code class="docutils literal notranslate"><span class="pre">setuptools</span></code> with <code class="docutils literal notranslate"><span class="pre">setuptools-rust</span></code>, and <code class="docutils literal notranslate"><span class="pre">setup.py</span></code> no longer exists. Installing with
+<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">.</span></code> or <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-e</span> <span class="pre">.</span></code> works as before, but when building from source:</p>
+<ul>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">SETUPTOOLS_RUST_CARGO_PROFILE</span></code> and <code class="docutils literal notranslate"><span class="pre">RUST_DEBUG</span></code> environment variables no longer have
+any effect. Editable installs still compile in debug mode by default; to compile them in
+release mode, pass the profile to <code class="docutils literal notranslate"><span class="pre">maturin</span></code> instead:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="nv">MATURIN_PEP517_ARGS</span><span class="o">=</span><span class="s2">"--profile release"</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+</pre></div>
+</div>
+</li>
+<li><p>To rebuild only the Rust extension module of an editable install, replace
+<code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">build_rust</span> <span class="pre">--inplace</span> <span class="pre">[--release]</span></code> with
+<code class="docutils literal notranslate"><span class="pre">maturin</span> <span class="pre">develop</span> <span class="pre">--skip-install</span> <span class="pre">[--release]</span></code>, or run <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">pyext-dev</span></code> (debug mode) or
+<code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">pyext</span></code> (release mode).</p></li>
+<li><p>In an existing source checkout, delete two leftovers of the old build backend, or they keep
+shadowing every new build: the extension module (for example,
+<code class="docutils literal notranslate"><span class="pre">python/qiskit_bosons/_lib.cpython-313-x86_64-linux-gnu.so</span></code>, which Python imports before
+the new <code class="docutils literal notranslate"><span class="pre">_lib.abi3.so</span></code>) and the <code class="docutils literal notranslate"><span class="pre">python/qiskit_bosons.egg-info</span></code> directory (whose entry
+points go stale). <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">pyext</span></code> and <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">pyext-dev</span></code> delete both for you.</p></li>
+</ul>
+</li>
 </ul>
 </section>
 <section id="bug-fixes">
@@ -428,6 +455,14 @@ and the order of the terms does not matter. The truncation of a mode only enters
 circuit is lowered to qubits. The <a class="reference internal" href="stubs/qiskit_bosons.circuit.BosonicGate.html#qiskit_bosons.circuit.BosonicGate.synthesis" title="qiskit_bosons.circuit.BosonicGate.synthesis"><code class="xref py py-attr docutils literal notranslate"><span class="pre">synthesis</span></code></a> and
 <a class="reference internal" href="stubs/qiskit_bosons.circuit.BosonicGate.html#qiskit_bosons.circuit.BosonicGate.atomic" title="qiskit_bosons.circuit.BosonicGate.atomic"><code class="xref py py-attr docutils literal notranslate"><span class="pre">atomic</span></code></a> flag are not compared: they decide how the
 gate is broken down, not what it is.</p></li>
+</ul>
+</section>
+<section id="other-notes">
+<span id="release-notes-upcoming-release-main-other-notes"></span><h3>Other Notes<a class="headerlink" href="#other-notes" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>The source distribution (sdist) now contains the Rust sources (<code class="docutils literal notranslate"><span class="pre">Cargo.toml</span></code>, <code class="docutils literal notranslate"><span class="pre">Cargo.lock</span></code>
+and the <code class="docutils literal notranslate"><span class="pre">crates/</span></code> directory), so <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span></code> can build <code class="docutils literal notranslate"><span class="pre">qiskit-bosons</span></code> from it.
+Previous source distributions lacked them and could not be built.</p></li>
 </ul>
 </section>
 </section>
@@ -496,9 +531,11 @@ through first-party Python bindings.</p>
             <ul>
 <li><a class="reference internal" href="#">Release Notes</a><ul>
 <li><a class="reference internal" href="#upcoming-release-main">Upcoming release (<code class="docutils literal notranslate"><span class="pre">main</span></code>)</a><ul>
-<li><a class="reference internal" href="#new-features">New Features</a></li>
-<li><a class="reference internal" href="#upgrade-notes">Upgrade Notes</a></li>
+<li><a class="reference internal" href="#python-api-features">Python API Features</a></li>
+<li><a class="reference internal" href="#python-api-upgrade-notes">Python API Upgrade Notes</a></li>
+<li><a class="reference internal" href="#build-system-changes">Build System Changes</a></li>
 <li><a class="reference internal" href="#bug-fixes">Bug Fixes</a></li>
+<li><a class="reference internal" href="#other-notes">Other Notes</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#a1">0.1.0a1</a><ul>
@@ -516,7 +553,7 @@ through first-party Python bindings.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=5d850bd8"></script>
+</div><script src="_static/documentation_options.js?v=130a53a1"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>
