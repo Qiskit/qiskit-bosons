@@ -23,10 +23,17 @@ style:
 # ==============================================================================
 # Recipes for Docs
 # ==============================================================================
-.PHONY: docs docsclean
+.PHONY: docs docs-no-llms docsclean
+
+SPHINX_HTML = sphinx-build -W -j auto -T -E --keep-going -b html
 
 docs:
-	sphinx-build -W -j auto -T -E --keep-going -b html docs/ docs/_build/html
+	$(SPHINX_HTML) docs/ docs/_build/html
+
+# For local iteration: `sphinx_llm.txt` builds its Markdown pages and `llms.txt` with a second, full
+# `sphinx-build` that runs alongside the HTML one and re-executes every guide. This target skips it.
+docs-no-llms:
+	$(SPHINX_HTML) -D llms_txt_enabled=0 docs/ docs/_build/html
 
 docsclean:
 	rm -rf docs/stubs/ docs/_build
