@@ -57,6 +57,7 @@ Features may also be implemented in the Python API directly first and refactored
 | Lint (rust + python) | `make lint` |
 | Auto-fix formatting | `make style` |
 | Build docs | `make docs` (Sphinx runs with `-W`: any warning fails the build) |
+| Build docs without the `llms.txt`/Markdown pages (faster, local only) | `make docs-no-llms` |
 | Bump version | `make version-bump VERSION=0.2.0.dev0` |
 
 > **`make testrust` needs a Python interpreter.** `core` is tested under the **`pyext`** backend (the only one wired up), which links `libpython`. A bare `cargo test` on FFI-touching modules will abort with a non-unwinding panic; that is why CI runs `testrust` *after* the package install. There are no `QISKIT_LIB`/`QISKIT_INCLUDE` variables in this project — nothing links Qiskit's C library.
