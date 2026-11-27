@@ -144,8 +144,8 @@ same holds for the bonds that touch no common site. On a chain, every second bon
 bonds 0 and 2 act on disjoint pairs of modes, so their hopping terms commute and can share a
 group, and bond 1 forms a group of its own. If you group the even and the odd bonds,
 you therefore need three groups, where one group per bond needs four. Fewer groups mean fewer factors, and
-also a shallower circuit: with the Gray code at ``max_occupation = 2`` the two-qubit depth is 95
-against 139. The lattice decides which bonds can share a group, which is why the partition is
+also a shallower circuit: with the Gray code at ``max_occupation = 2`` the two-qubit depth drops by
+about a third. The lattice decides which bonds can share a group, which is why the partition is
 chosen here.
 
 The :attr:`~qiskit_bosons.operators.BosonOperator.groups` attribute carries that decision
@@ -201,7 +201,8 @@ To see what each group holds, separate the groups:
 The even-and-odd grouping is a choice, and the alternative is easy to measure. If you give every bond a group
 of its own, you need four groups, and the same circuit then costs more two-qubit depth. The depth is
 counted after the circuit is lowered with the Gray code at ``max_occupation = 2``, which step 4
-explains:
+explains. The exact depths depend on how your Qiskit version synthesizes each evolution gate, so the
+following check compares them instead of printing them:
 
 .. plot::
    :context:
@@ -229,10 +230,11 @@ explains:
    ...     else edges.index(tuple(sorted({m for _, m in actions})))
    ...     for actions, _ in per_bond.iter_terms()
    ... ]
-   >>> per_bond.num_groups(), two_qubit_depth(per_bond)
-   (4, 139)
-   >>> hamiltonian.num_groups(), two_qubit_depth(hamiltonian)
-   (3, 95)
+   >>> per_bond.num_groups(), hamiltonian.num_groups()
+   (4, 3)
+   >>> ratio = two_qubit_depth(hamiltonian) / two_qubit_depth(per_bond)
+   >>> bool(0.6 < ratio < 0.75)  # the even-and-odd grouping is about a third shallower
+   True
 
 3. The bosonic circuit
 ----------------------
@@ -620,6 +622,7 @@ The same bosonic circuit, lowered with the Gray code at each cutoff:
    :nofigs:
    :include-source:
 
+   >>> depths = []
    >>> for max_occ in (1, 2, 3, 4):
    ...     pass_manager = generate_preset_occupation_pass_manager(
    ...         LevelSpec(max_occ, LevelEncoding.GRAY)
@@ -627,13 +630,20 @@ The same bosonic circuit, lowered with the Gray code at each cutoff:
    ...     pass_manager.qubit = PassManager()
    ...     lowered = pass_manager.run(decomposed)
    ...     depth = lowered.decompose(reps=6).depth(lambda instruction: len(instruction.qubits) == 2)
-   ...     print(f"d={max_occ + 1}  qubits={lowered.num_qubits:2d}  2q-depth={depth:4d}")
-   d=2  qubits= 4  2q-depth=   8
-   d=3  qubits= 8  2q-depth=  95
-   d=4  qubits= 8  2q-depth= 217
-   d=5  qubits=12  2q-depth=1176
+   ...     depths.append(depth)
+   ...     print(f"d={max_occ + 1}  qubits={lowered.num_qubits:2d}")
+   d=2  qubits= 4
+   d=3  qubits= 8
+   d=4  qubits= 8
+   d=5  qubits=12
+   >>> bool(all(shallower < deeper for shallower, deeper in zip(depths, depths[1:])))
+   True
+   >>> bool(depths[-1] > 10 * depths[1])  # d=5 against d=3
+   True
 
-Each extra level costs depth, and the qubit count jumps whenever :math:`d` passes a power of two.
+The exact depths again depend on the Qiskit version, but their growth does not: each extra level
+costs depth, and at :math:`d = 5` the circuit is more than ten times as deep as at :math:`d = 3`.
+The qubit count jumps whenever :math:`d` passes a power of two.
 When you converge in :math:`d`, you therefore trade accuracy against circuit size, so the sweep is
 more than a numerical check.
 
