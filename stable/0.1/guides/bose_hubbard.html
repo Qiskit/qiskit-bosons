@@ -479,8 +479,8 @@ same holds for the bonds that touch no common site. On a chain, every second bon
 bonds 0 and 2 act on disjoint pairs of modes, so their hopping terms commute and can share a
 group, and bond 1 forms a group of its own. If you group the even and the odd bonds,
 you therefore need three groups, where one group per bond needs four. Fewer groups mean fewer factors, and
-also a shallower circuit: with the Gray code at <code class="docutils literal notranslate"><span class="pre">max_occupation</span> <span class="pre">=</span> <span class="pre">2</span></code> the two-qubit depth is 95
-against 139. The lattice decides which bonds can share a group, which is why the partition is
+also a shallower circuit: with the Gray code at <code class="docutils literal notranslate"><span class="pre">max_occupation</span> <span class="pre">=</span> <span class="pre">2</span></code> the two-qubit depth drops by
+about a third. The lattice decides which bonds can share a group, which is why the partition is
 chosen here.</p>
 <p>The <a class="reference internal" href="../stubs/qiskit_bosons.operators.BosonOperator.html#qiskit_bosons.operators.BosonOperator.groups" title="qiskit_bosons.operators.BosonOperator.groups"><code class="xref py py-attr docutils literal notranslate"><span class="pre">groups</span></code></a> attribute carries that decision
 into the circuit: an <a class="reference internal" href="../stubs/qiskit_bosons.circuit.library.Evolution.html#qiskit_bosons.circuit.library.Evolution" title="qiskit_bosons.circuit.library.Evolution"><code class="xref py py-class docutils literal notranslate"><span class="pre">Evolution</span></code></a> gate over a grouped
@@ -520,7 +520,8 @@ grouping should pass.</p>
 <p>The even-and-odd grouping is a choice, and the alternative is easy to measure. If you give every bond a group
 of its own, you need four groups, and the same circuit then costs more two-qubit depth. The depth is
 counted after the circuit is lowered with the Gray code at <code class="docutils literal notranslate"><span class="pre">max_occupation</span> <span class="pre">=</span> <span class="pre">2</span></code>, which step 4
-explains:</p>
+explains. The exact depths depend on how your Qiskit version synthesizes each evolution gate, so the
+following check compares them instead of printing them:</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">qiskit.transpiler</span><span class="w"> </span><span class="kn">import</span> <span class="n">PassManager</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_bosons.circuit</span><span class="w"> </span><span class="kn">import</span> <span class="n">BosonicCircuit</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_bosons.circuit.library</span><span class="w"> </span><span class="kn">import</span> <span class="n">Evolution</span>
@@ -542,10 +543,11 @@ explains:</p>
 <span class="gp">... </span>    <span class="k">else</span> <span class="n">edges</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">({</span><span class="n">m</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">actions</span><span class="p">})))</span>
 <span class="gp">... </span>    <span class="k">for</span> <span class="n">actions</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">per_bond</span><span class="o">.</span><span class="n">iter_terms</span><span class="p">()</span>
 <span class="gp">... </span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">per_bond</span><span class="o">.</span><span class="n">num_groups</span><span class="p">(),</span> <span class="n">two_qubit_depth</span><span class="p">(</span><span class="n">per_bond</span><span class="p">)</span>
-<span class="go">(4, 139)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">hamiltonian</span><span class="o">.</span><span class="n">num_groups</span><span class="p">(),</span> <span class="n">two_qubit_depth</span><span class="p">(</span><span class="n">hamiltonian</span><span class="p">)</span>
-<span class="go">(3, 95)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">per_bond</span><span class="o">.</span><span class="n">num_groups</span><span class="p">(),</span> <span class="n">hamiltonian</span><span class="o">.</span><span class="n">num_groups</span><span class="p">()</span>
+<span class="go">(4, 3)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ratio</span> <span class="o">=</span> <span class="n">two_qubit_depth</span><span class="p">(</span><span class="n">hamiltonian</span><span class="p">)</span> <span class="o">/</span> <span class="n">two_qubit_depth</span><span class="p">(</span><span class="n">per_bond</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">bool</span><span class="p">(</span><span class="mf">0.6</span> <span class="o">&lt;</span> <span class="n">ratio</span> <span class="o">&lt;</span> <span class="mf">0.75</span><span class="p">)</span>  <span class="c1"># the even-and-odd grouping is about a third shallower</span>
+<span class="go">True</span>
 </pre></div>
 </div>
 </section>
@@ -864,21 +866,29 @@ conserved quantity, and it is a bound only for operators that conserve the parti
 not a general rule, so the cutoff has to be swept, not guessed.</p>
 <p>The sweep has a price on the circuit side too, which is what the exact reference does not show.
 The same bosonic circuit, lowered with the Gray code at each cutoff:</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">max_occ</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">depths</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">max_occ</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
 <span class="gp">... </span>    <span class="n">pass_manager</span> <span class="o">=</span> <span class="n">generate_preset_occupation_pass_manager</span><span class="p">(</span>
 <span class="gp">... </span>        <span class="n">LevelSpec</span><span class="p">(</span><span class="n">max_occ</span><span class="p">,</span> <span class="n">LevelEncoding</span><span class="o">.</span><span class="n">GRAY</span><span class="p">)</span>
 <span class="gp">... </span>    <span class="p">)</span>
 <span class="gp">... </span>    <span class="n">pass_manager</span><span class="o">.</span><span class="n">qubit</span> <span class="o">=</span> <span class="n">PassManager</span><span class="p">()</span>
 <span class="gp">... </span>    <span class="n">lowered</span> <span class="o">=</span> <span class="n">pass_manager</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">decomposed</span><span class="p">)</span>
 <span class="gp">... </span>    <span class="n">depth</span> <span class="o">=</span> <span class="n">lowered</span><span class="o">.</span><span class="n">decompose</span><span class="p">(</span><span class="n">reps</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span><span class="o">.</span><span class="n">depth</span><span class="p">(</span><span class="k">lambda</span> <span class="n">instruction</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">instruction</span><span class="o">.</span><span class="n">qubits</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span>
-<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"d=</span><span class="si">{</span><span class="n">max_occ</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">  qubits=</span><span class="si">{</span><span class="n">lowered</span><span class="o">.</span><span class="n">num_qubits</span><span class="si">:</span><span class="s2">2d</span><span class="si">}</span><span class="s2">  2q-depth=</span><span class="si">{</span><span class="n">depth</span><span class="si">:</span><span class="s2">4d</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="go">d=2  qubits= 4  2q-depth=   8</span>
-<span class="go">d=3  qubits= 8  2q-depth=  95</span>
-<span class="go">d=4  qubits= 8  2q-depth= 217</span>
-<span class="go">d=5  qubits=12  2q-depth=1176</span>
+<span class="gp">... </span>    <span class="n">depths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">depth</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"d=</span><span class="si">{</span><span class="n">max_occ</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">  qubits=</span><span class="si">{</span><span class="n">lowered</span><span class="o">.</span><span class="n">num_qubits</span><span class="si">:</span><span class="s2">2d</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="go">d=2  qubits= 4</span>
+<span class="go">d=3  qubits= 8</span>
+<span class="go">d=4  qubits= 8</span>
+<span class="go">d=5  qubits=12</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">bool</span><span class="p">(</span><span class="nb">all</span><span class="p">(</span><span class="n">shallower</span> <span class="o">&lt;</span> <span class="n">deeper</span> <span class="k">for</span> <span class="n">shallower</span><span class="p">,</span> <span class="n">deeper</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">depths</span><span class="p">,</span> <span class="n">depths</span><span class="p">[</span><span class="mi">1</span><span class="p">:])))</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">bool</span><span class="p">(</span><span class="n">depths</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">depths</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>  <span class="c1"># d=5 against d=3</span>
+<span class="go">True</span>
 </pre></div>
 </div>
-<p>Each extra level costs depth, and the qubit count jumps whenever <span class="math">\(d\)</span> passes a power of two.
+<p>The exact depths again depend on the Qiskit version, but their growth does not: each extra level
+costs depth, and at <span class="math">\(d = 5\)</span> the circuit is more than ten times as deep as at <span class="math">\(d = 3\)</span>.
+The qubit count jumps whenever <span class="math">\(d\)</span> passes a power of two.
 When you converge in <span class="math">\(d\)</span>, you therefore trade accuracy against circuit size, so the sweep is
 more than a numerical check.</p>
 <p>Note also that <span class="math">\(d = 2\)</span> being nearly right is a coincidence of the observable:
@@ -981,7 +991,7 @@ photonic, vibrational, and spin-s Hamiltonians, npj Quantum Information 6, 49 (2
             
             <a href="https://github.com/pradyunsg/furo">Furo</a>
             <div class="last-updated">
-              Last updated on 2026/11/24</div>
+              Last updated on 2026/11/27</div>
           </div>
           <div class="right-details">
             
